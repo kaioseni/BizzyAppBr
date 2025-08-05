@@ -19,6 +19,14 @@ export default Onboarding = () => {
 
     const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
+    const scrollTo = () => {
+        if(currentIndex < slides.length - 1){
+            slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
+        }else{
+
+        }
+    }
+
     return (
         <>
             <View style={styles.container}>
@@ -38,8 +46,7 @@ export default Onboarding = () => {
                 </View>
 
                 <Paginator data={slides} scrollx={scrollx}/>
-                <NextButton/>
-
+                <NextButton scrollTo={scrollTo} percentage={(currentIndex + 1) * (100 / slides.length)}/>
             </View>
         </>
     );

@@ -1,18 +1,26 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAnalytics } from "firebase/analytics";
+import {
+  FIREBASE_API_KEY,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_PROJECT_ID,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID,
+  FIREBASE_MEASUREMENT_ID
+} from "@env";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDs02X0xHxoE5ZI3VzIBN0FFh2rzE68-G0",
-  authDomain: "bizzyappbr.firebaseapp.com",
-  projectId: "bizzyappbr",
-  storageBucket: "bizzyappbr.appspot.com",
-  //storageBucket: "bizzyappbr.firebasestorage.app"
-  messagingSenderId: "992136817098",
-  appId: "1:992136817098:web:f7c616519e12d1b7bb4733",
-  measurementId: "G-3X76Q7P74P"
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID,
+  measurementId: FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+const analytics = getAnalytics(app);
 
-export { auth };
+export { app, analytics };
