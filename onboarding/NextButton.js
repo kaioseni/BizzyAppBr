@@ -3,7 +3,6 @@ import { View, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import Svg, { G, Circle } from "react-native-svg";
 import { AntDesign } from '@expo/vector-icons';
 
-// Cria um componente Circle animável
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const NextButton = ({ percentage, scrollTo }) => {
