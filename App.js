@@ -1,47 +1,45 @@
+// App.js
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import OnboardingCarousel from './onboarding/OnboardingCarousel';
-import LoginScreen from './screens/LoginScreen'
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import AppRoutes from './routes/AppRoutes';
 
-const Loading = () => {
-  <View>
+const Loading = () => (
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <ActivityIndicator size="large" />
   </View>
-}
+);
 
 export default function App() {
-
   const [loading, setLoading] = useState(true);
   const [viewOnboarding, setViewOnboarding] = useState(false);
 
-
   const checkOnboarding = async () => {
-
     try {
       const value = await AsyncStorage.getItem('@viewedOnboarding');
-
       if (value !== null) {
-        setViewOnboarding(true)
+        setViewOnboarding(true);
       }
     } catch (err) {
-      console.log('Error @checkOnboarding: ', err)
+      console.log('Error @checkOnboarding: ', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-
-  }
+  };
 
   useEffect(() => {
     checkOnboarding();
-  },[]);
+  }, []);
+
+  if (loading) return <Loading />;
 
   return (
-    <View style={styles.container}>
-      {loading ? <Loading /> : viewOnboarding ? <LoginScreen /> : <OnboardingCarousel />}
+    <NavigationContainer>
+      <AppRoutes viewOnboarding={viewOnboarding} />
       <StatusBar style="auto" />
-    </View>
+    </NavigationContainer>
   );
 }
 

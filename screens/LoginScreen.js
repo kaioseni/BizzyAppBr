@@ -1,53 +1,59 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
 
 
 export default function LoginScreen() {
 
+  const navigation = useNavigation();
+
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  const handleLogin = () => {
+  /*const handleLogin = () => {
     console.log('E-mail:', email);
     console.log('Senha:', senha);
-  };
+  };*/
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <Text style={styles.title}>Bem-vindo de volta 👋</Text>
+    <>
+      <View style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <Text style={styles.title}>Bem-vindo de volta 👋</Text>
 
-      <TextInput
-        placeholder="E-mail"
-        placeholderTextColor="#999"
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+          <TextInput
+            placeholder="E-mail"
+            placeholderTextColor="#999"
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-      <TextInput
-        placeholder="Senha"
-        placeholderTextColor="#999"
-        style={styles.input}
-        value={senha}
-        onChangeText={setSenha}
-        secureTextEntry
-      />
+          <TextInput
+            placeholder="Senha"
+            placeholderTextColor="#999"
+            style={styles.input}
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry
+          />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.8}>
-        <Text style={styles.buttonText}>Entrar</Text>
-      </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('HomeScreen')} activeOpacity={0.8}>
+            <Text style={styles.buttonText}>Entrar</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Cadastro')}>
-        <Text style={styles.registerText}>
-          Ainda não tem conta? <Text style={styles.registerLink}>Cadastre-se</Text>
-        </Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.registerText}>
+              Ainda não tem conta? <Text style={styles.registerLink}>Cadastre-se</Text>
+            </Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </View>
+    </>
   );
 }
 

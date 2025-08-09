@@ -5,8 +5,12 @@ import OnboardingItem from "./OnboardingItem";
 import Paginator from "./Paginator";
 import NextButton from "./NextButton";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+
 
 export default Onboarding = () => {
+
+    const navigation = useNavigation();
 
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -20,17 +24,19 @@ export default Onboarding = () => {
 
     const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-    const scrollTo =  async () => {
-        if(currentIndex < slides.length - 1){
+    const scrollTo = async () => {
+        if (currentIndex < slides.length - 1) {
             slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
-        }else{
-            try{
+        } else {
+            try {
                 await AsyncStorage.setItem('@viewedOnboarding', 'true');
+                navigation.replace('LoginScreen'); 
             } catch (err) {
-                console.log('Error @setItem: ', err)
+                console.log('Error @setItem: ', err);
             }
         }
-    }
+    };
+
 
     return (
         <>
@@ -50,8 +56,8 @@ export default Onboarding = () => {
                     />
                 </View>
 
-                <Paginator data={slides} scrollx={scrollx}/>
-                <NextButton scrollTo={scrollTo} percentage={(currentIndex + 1) * (100 / slides.length)}/>
+                <Paginator data={slides} scrollx={scrollx} />
+                <NextButton scrollTo={scrollTo} percentage={(currentIndex + 1) * (100 / slides.length)} />
             </View>
         </>
     );
