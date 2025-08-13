@@ -1,46 +1,54 @@
-import React, { use } from "react";
+import React from "react";
 import { View, Text, StyleSheet, Image, useWindowDimensions } from "react-native";
-import slides from './slides';
 
 export default OnboardingItem = ({ item }) => {
-
-    const { width } = useWindowDimensions();
+    const { width, height } = useWindowDimensions();
 
     return (
-        <>
-            <View style={[styles.container, { width }]}>
-                <Image source={item.image} style={[styles.image, { width, resizeMode: 'contain' }]} />
+        <View style={[styles.container, { width }]}>
+            <Image
+                source={item.image}
+                style={[
+                    styles.image,
+                    {
+                        width: width * 0.8, 
+                        height: height * 0.4, 
+                    },
+                ]}
+                resizeMode="contain"
+            />
 
-                <View style={{ flex: 0.3 }}>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.description}>{item.description}</Text>
-                </View>
+            <View style={{ flex: 0.3, paddingHorizontal: width * 0.1 }}>
+                <Text style={[styles.title, { fontSize: width * 0.07 }]}>
+                    {item.title}
+                </Text>
+                <Text style={[styles.description, { fontSize: width * 0.045 }]}>
+                    {item.description}
+                </Text>
             </View>
-        </>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: "center",
+        alignItems: "center",
     },
     image: {
         flex: 0.4,
-        justifyContent: 'center',
+        justifyContent: "center",
     },
     title: {
-        fontWeight: '900',
-        fontSize: 28,
+        fontWeight: "900",
         marginBottom: 10,
-        color: '#329de4ff',
-        textAlign: 'center',
+        color: "#329de4ff",
+        textAlign: "center",
     },
     description: {
-        fontWeight: '300',
-        color: '#62656b',
-        textAlign: 'center',
-        paddingHorizontal: 50,
+        fontWeight: "300",
+        color: "#62656b",
+        textAlign: "center",
     },
-})
+});

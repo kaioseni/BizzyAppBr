@@ -2,39 +2,52 @@ import React from "react";
 import { View, StyleSheet, Animated, useWindowDimensions } from "react-native";
 
 export default Paginator = ({ data, scrollx }) => {
+  const { width } = useWindowDimensions();
 
-    const { width } = useWindowDimensions();
 
-    return(
-        <>
-            <View style={{ flexDirection: "row", height: 64 }}>
-               {data.map((_,i) => {
-                const inputRange = [(i-1) * width, i * width, (i+1) * width];
+  const dotHeight = width * 0.025; 
+  const dotBorderRadius = dotHeight / 2;
+  const dotMarginHorizontal = width * 0.015; 
 
-                const dotWidth = scrollx.interpolate({
-                    inputRange,
-                    outputRange: [10, 20, 10],
-                    extrapolate: 'clamp',
-                })
+  return (
+    <View style={{ flexDirection: "row", height: dotHeight * 3, justifyContent: 'center' }}>
+      {data.map((_, i) => {
+        const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
 
-                const opacity = scrollx.interpolate({
-                    inputRange,
-                    outputRange: [0.3, 1, 0.3],
-                    extrapolate: 'clamp',
-                })
+        const dotWidth = scrollx.interpolate({
+          inputRange,
+          outputRange: [dotHeight, dotHeight * 2, dotHeight],
+          extrapolate: "clamp",
+        });
 
-                return <Animated.View style={[styles.dot,  {width: dotWidth, opacity}]} key={i.toString()}/>;
-               })} 
-            </View>
-        </>
-    );
-}
+        const opacity = scrollx.interpolate({
+          inputRange,
+          outputRange: [0.3, 1, 0.3],
+          extrapolate: "clamp",
+        });
+
+        return (
+          <Animated.View
+            key={i.toString()}
+            style={[
+              styles.dot,
+              {
+                width: dotWidth,
+                height: dotHeight,
+                borderRadius: dotBorderRadius,
+                marginHorizontal: dotMarginHorizontal,
+                opacity,
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    dot:{
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: "#329de4ff",
-        marginHorizontal: 8,
-    }
+  dot: {
+    backgroundColor: "#329de4ff",
+  },
 });
