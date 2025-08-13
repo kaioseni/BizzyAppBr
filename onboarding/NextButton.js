@@ -63,7 +63,7 @@ const NextButton = ({ percentage, scrollTo, isLast }) => {
                 style={[
                     styles.button,
                     isLast && styles.buttonLast,
-                    { padding: size * 0.25, borderRadius: isLast ? size * 0.35 : 100 }
+                    { padding: size * 0.2, borderRadius: isLast ? size * 0.35 : 100 }
                 ]}
                 activeOpacity={0.6}
             >
@@ -92,10 +92,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#329de4ff',
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 2,
     },
     buttonLast: {
         borderWidth: 2,
         borderColor: '#329de4ff',
+        borderColor: '#000',
+        borderRadius: 2,
     },
     getStartedText: {
         fontWeight: 'bold',
