@@ -3,17 +3,10 @@ import React, { useState } from 'react';
 import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
 
 
-export default function LoginScreen() {
-
-  const navigation = useNavigation();
+export default function LoginScreen({navigation}) {
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-
-  /*const handleLogin = () => {
-    console.log('E-mail:', email);
-    console.log('Senha:', senha);
-  };*/
 
   return (
     <>

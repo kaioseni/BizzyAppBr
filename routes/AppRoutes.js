@@ -1,4 +1,3 @@
-// routes/AppRoutes.js
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -9,14 +8,14 @@ const Stack = createNativeStackNavigator();
 
 export default function AppRoutes({ viewOnboarding }) {
   return (
-    <Stack.Navigator
-      initialRouteName={viewOnboarding ? 'LoginScreen' : 'OnboardingCarousel'}
-      screenOptions={{ headerShown: false }}
-    >
-      <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} />
-      <Stack.Screen name="LoginScreen" component={LoginScreen} />
-      <Stack.Screen name="HomeScreen" component={HomeScreen} />
-      <Stack.Screen name="Register" component={Register} />
-    </Stack.Navigator>
+      <Stack.Navigator
+        initialRouteName={viewOnboarding ? 'LoginScreen' : 'OnboardingCarousel'}
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} />
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="HomeScreen" component={HomeScreen} />
+        <Stack.Screen name="Register" component={Register} />
+      </Stack.Navigator>
   );
 }

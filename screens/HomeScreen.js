@@ -2,9 +2,8 @@ import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import { Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
 
-export default function HomeScreen() {
+export default function HomeScreen({navigation}) {
 
-    const navigation = useNavigation();
 
     return (
         <>

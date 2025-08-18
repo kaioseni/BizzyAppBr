@@ -1,10 +1,10 @@
-// App.js
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppRoutes from './routes/AppRoutes';
+import { AuthProvider } from './contexts/AuthContext';
 
 const Loading = () => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -37,8 +37,10 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <AppRoutes viewOnboarding={viewOnboarding} />
-      <StatusBar style="auto" />
+      <AuthProvider>
+        <AppRoutes viewOnboarding={viewOnboarding} />
+        <StatusBar style="auto" />
+      </AuthProvider>
     </NavigationContainer>
   );
 }
