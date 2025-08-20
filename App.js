@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppRoutes from './routes/AppRoutes';
 import { AuthProvider } from './contexts/AuthContext';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from './utils/toastConfig';
 
 const Loading = () => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -40,6 +42,7 @@ export default function App() {
       <AuthProvider>
         <AppRoutes viewOnboarding={viewOnboarding} />
         <StatusBar style="auto" />
+        <Toast config={toastConfig}/>
       </AuthProvider>
     </NavigationContainer>
   );

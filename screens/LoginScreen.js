@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, View, Alert } from 'react-native';
+import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
+import Toast from 'react-native-toast-message';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -10,29 +11,44 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !senha) {
-      Alert.alert('Erro', 'Preencha todos os campos');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Preencha todos os campos',
+      });
       return;
     }
 
     setLoading(true);
 
     try {
-      // tenta logar no Firebase
       await signInWithEmailAndPassword(auth, email, senha);
       setLoading(false);
-      navigation.navigate('HomeScreen'); // sucesso, vai para Home
+      Toast.show({
+        type: 'success',
+        text1: 'Login realizado!',
+        text2: 'Bem-vindo de volta 👋',
+      });
+      navigation.navigate('HomeScreen');
     } catch (error) {
       setLoading(false);
-      // tratamento de erro específico
+
+      let message = '';
       if (error.code === 'auth/user-not-found') {
-        Alert.alert('Erro', 'Usuário não encontrado. Cadastre-se primeiro.');
-      } else if (error.code === 'auth/wrong-password') {
-        Alert.alert('Erro', 'Senha incorreta.');
+        message = 'Usuário não encontrado. Cadastre-se primeiro.';
+      } else if (error.code === 'auth/invalid-credential') {
+        message = 'Senha incorreta.';
       } else if (error.code === 'auth/invalid-email') {
-        Alert.alert('Erro', 'E-mail inválido.');
-      } else {
-        Alert.alert('Erro', error.message);
+        message = 'E-mail inválido.';
+      }else {
+        message = error.message;
       }
+
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: message,
+      });
     }
   };
 
@@ -74,7 +90,8 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-// ... seus estilos permanecem iguais
+// seus estilos permanecem iguais
+
 
 const styles = StyleSheet.create({
   container: {
