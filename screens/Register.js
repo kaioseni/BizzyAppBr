@@ -1,6 +1,5 @@
 import { useContext, useState } from "react";
 import {
-  View,
   TextInput,
   Text,
   StyleSheet,
@@ -15,10 +14,11 @@ import * as ImagePicker from "expo-image-picker";
 import { MaskedTextInput } from "react-native-mask-text";
 import { AuthContext } from "../contexts/AuthContext";
 import { buscarEnderecoPorCEP } from "../services/cep";
+import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 
-export default function Register() {
+export default function Register({ navigation }) {
   const { register } = useContext(AuthContext);
 
   const [logo, setLogo] = useState(null);
@@ -35,6 +35,7 @@ export default function Register() {
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
 
+  const [loadingRegister, setLoadingRegister] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -51,7 +52,11 @@ export default function Register() {
 
   const handleBuscarCEP = async () => {
     if (cep.replace(/\D/g, "").length < 8) {
-      alert("Digite um CEP válido!");
+      Toast.show({
+        type: "error",
+        text1: "CEP inválido",
+        text2: "Digite um CEP válido!",
+      });
       return;
     }
 
@@ -62,12 +67,26 @@ export default function Register() {
       setCidade(endereco.cidade);
       setEstado(endereco.estado);
     } catch (error) {
-      alert(error.message);
+      Toast.show({
+        type: "error",
+        text1: "Erro ao buscar CEP",
+        text2: error.message,
+      });
     }
   };
 
   const handleRegister = async () => {
+    if (!nomeEstabelecimento || !telefone || !email || !password) {
+      Toast.show({
+        type: "error",
+        text1: "Campos obrigatórios",
+        text2: "Preencha todos os campos antes de continuar",
+      });
+      return;
+    }
+
     try {
+      setLoadingRegister(true);
       await register(email, password, {
         nomeEstabelecimento,
         telefone,
@@ -80,9 +99,23 @@ export default function Register() {
         numero,
         complemento,
       });
-      alert("Usuário criado com sucesso!");
+
+      Toast.show({
+        type: "success",
+        text1: "Sucesso!",
+        text2: "Usuário criado com sucesso 🎉",
+      });
+
+      navigation.navigate('HomeScreen');
+
     } catch (error) {
-      alert("Erro: " + error.message);
+      Toast.show({
+        type: "error",
+        text1: "Erro no cadastro",
+        text2: error.message,
+      });
+    } finally {
+      setLoadingRegister(false);
     }
   };
 
@@ -182,8 +215,15 @@ export default function Register() {
           style={[styles.input, { width: width * 0.9 }]}
         />
 
-        <TouchableOpacity style={styles.botao} onPress={handleRegister}>
-          <Text style={styles.textoBotao}>Cadastrar</Text>
+        <TouchableOpacity
+          style={[styles.botao, loadingRegister && { backgroundColor: "#7fbdea" }]}
+          onPress={handleRegister}
+          activeOpacity={0.8}
+          disabled={loadingRegister}
+        >
+          <Text style={styles.textoBotao}>
+            {loadingRegister ? "Cadastrando..." : "Cadastrar"}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -206,7 +246,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   botao: {
-    backgroundColor: '#329de4ff',
+    backgroundColor: "#329de4ff",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
@@ -218,7 +258,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-   imageContainer: {
+  imageContainer: {
     width: width * 0.5,
     height: width * 0.5,
     borderRadius: (width * 0.5) / 2,
