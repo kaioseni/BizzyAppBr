@@ -9,7 +9,9 @@ import {
   Platform,
   Dimensions,
   TouchableOpacity,
+  Image,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { MaskedTextInput } from "react-native-mask-text";
 import { AuthContext } from "../contexts/AuthContext";
 import { buscarEnderecoPorCEP } from "../services/cep";
@@ -19,6 +21,7 @@ const { width } = Dimensions.get("window");
 export default function Register() {
   const { register } = useContext(AuthContext);
 
+  const [logo, setLogo] = useState(null);
   const [nomeEstabelecimento, setNomeEstabelecimento] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
@@ -31,6 +34,20 @@ export default function Register() {
   const [estado, setEstado] = useState("");
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
+
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setLogo(result.assets[0].uri);
+    }
+  };
 
   const handleBuscarCEP = async () => {
     if (cep.replace(/\D/g, "").length < 8) {
@@ -54,6 +71,7 @@ export default function Register() {
       await register(email, password, {
         nomeEstabelecimento,
         telefone,
+        logo,
         cep,
         logradouro,
         bairro,
@@ -75,6 +93,14 @@ export default function Register() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
+          {logo ? (
+            <Image source={{ uri: logo }} style={styles.logo} />
+          ) : (
+            <Text style={styles.imagePlaceholder}>Selecionar logotipo</Text>
+          )}
+        </TouchableOpacity>
+
         <TextInput
           placeholder="Nome do Estabelecimento"
           value={nomeEstabelecimento}
@@ -180,7 +206,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   botao: {
-     backgroundColor: '#329de4ff',
+    backgroundColor: '#329de4ff',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
@@ -191,5 +217,24 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+   imageContainer: {
+    width: width * 0.5,
+    height: width * 0.5,
+    borderRadius: (width * 0.5) / 2,
+    backgroundColor: "#cbcbcbff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  logo: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  imagePlaceholder: {
+    color: "#999",
+    textAlign: "center",
   },
 });

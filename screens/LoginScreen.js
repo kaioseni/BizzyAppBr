@@ -1,13 +1,24 @@
-import React, { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
+import React, { useState, useContext } from 'react';
+import {
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  View
+} from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import Toast from 'react-native-toast-message';
+import { AuthContext } from "../contexts/AuthContext";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const { resetPassword } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!email || !senha) {
@@ -40,7 +51,42 @@ export default function LoginScreen({ navigation }) {
         message = 'Senha incorreta.';
       } else if (error.code === 'auth/invalid-email') {
         message = 'E-mail inválido.';
-      }else {
+      } else {
+        message = error.message;
+      }
+
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: message,
+      });
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      Toast.show({
+        type: 'error',
+        text1: 'Aviso!',
+        text2: 'Informe o e-mail para recuperar a senha.',
+      });
+      return;
+    }
+
+    try {
+      await resetPassword(email);
+      Toast.show({
+        type: 'success',
+        text1: 'E-mail enviado!',
+        text2: 'Verifique sua caixa de entrada para redefinir a senha.',
+      });
+    } catch (error) {
+      let message = '';
+      if (error.code === 'auth/user-not-found') {
+        message = 'Usuário não encontrado.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = 'E-mail inválido.';
+      } else {
         message = error.message;
       }
 
@@ -85,13 +131,14 @@ export default function LoginScreen({ navigation }) {
             Ainda não tem conta? <Text style={styles.registerLink}>Cadastre-se</Text>
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity onPress={handlePasswordReset}>
+          <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </View>
   );
 }
-
-// seus estilos permanecem iguais
-
 
 const styles = StyleSheet.create({
   container: {
@@ -114,8 +161,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 15,
     fontSize: 16,
-    marginBottom: 20,
+    marginBottom: 10,
     color: '#333',
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#329de4',
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingVertical: 12
   },
   button: {
     backgroundColor: '#329de4',
