@@ -28,7 +28,6 @@ export default function LoginScreen({ navigation }) {
     initBiometric();
   }, []);
 
-  // Inicializa biometria e tenta login automático se ativada
   const initBiometric = async () => {
     const compatible = await LocalAuthentication.hasHardwareAsync();
     const enrolled = await LocalAuthentication.isEnrolledAsync();
