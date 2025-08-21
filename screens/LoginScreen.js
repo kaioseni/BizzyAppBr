@@ -40,7 +40,6 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  // Login com email/senha
   const handleLogin = async () => {
     if (!email || !senha) {
       return showToast('error', 'Erro', 'Preencha todos os campos');
@@ -61,12 +60,11 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  // Prompt para habilitar biometria (aparece só se ainda não habilitado)
   const promptEnableBiometrics = async () => {
     if (!biometricAvailable) return;
 
     const useBio = await AsyncStorage.getItem("useBiometrics");
-    if (useBio === "true") return; // já habilitado, não mostra alerta
+    if (useBio === "true") return; 
 
     Alert.alert(
       "Autenticação biométrica",
@@ -81,7 +79,6 @@ export default function LoginScreen({ navigation }) {
     );
   };
 
-  // Login via biometria
   const handleBiometricAuth = async () => {
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: "Login com biometria",
@@ -94,15 +91,12 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  // Reset de senha
   const handlePasswordReset = () => navigation.navigate('ForgotPassword');
 
-  // Mostra toast
   const showToast = (type, title, message) => {
     Toast.show({ type, text1: title, text2: message });
   };
 
-  // Tratamento de erros do Firebase Auth
   const handleAuthError = (error) => {
     let message = '';
     switch (error.code) {
@@ -156,15 +150,7 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
         </TouchableOpacity>
 
-        {biometricAvailable && (
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: '#555' }]}
-            onPress={handleBiometricAuth}
-          >
-            <Text style={styles.buttonText}>Entrar com biometria</Text>
-          </TouchableOpacity>
-        )}
-
+        
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerText}>
             Ainda não tem conta? <Text style={styles.registerLink}>Cadastre-se</Text>
