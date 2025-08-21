@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   Text,
   TextInput,
@@ -6,101 +6,131 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  View
+  ScrollView,
+  Alert
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import Toast from 'react-native-toast-message';
 import { AuthContext } from "../contexts/AuthContext";
+import * as LocalAuthentication from 'expo-local-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   const { resetPassword } = useContext(AuthContext);
 
+  useEffect(() => {
+    initBiometric();
+  }, []);
+
+  // Inicializa biometria e tenta login automático se ativada
+  const initBiometric = async () => {
+    const compatible = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    setBiometricAvailable(compatible && enrolled);
+
+    const useBio = await AsyncStorage.getItem("useBiometrics");
+    if (compatible && enrolled && useBio === "true") {
+      handleBiometricAuth();
+    }
+  };
+
+  // Login com email/senha
   const handleLogin = async () => {
     if (!email || !senha) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Preencha todos os campos',
-      });
-      return;
+      return showToast('error', 'Erro', 'Preencha todos os campos');
     }
 
     setLoading(true);
-
     try {
       await signInWithEmailAndPassword(auth, email, senha);
       setLoading(false);
-      Toast.show({
-        type: 'success',
-        text1: 'Login realizado!',
-        text2: 'Bem-vindo de volta 👋',
-      });
+      showToast('success', 'Login realizado!', 'Bem-vindo de volta 👋');
+
+      await promptEnableBiometrics();
+
       navigation.navigate('HomeScreen');
     } catch (error) {
       setLoading(false);
-
-      let message = '';
-      if (error.code === 'auth/user-not-found') {
-        message = 'Usuário não encontrado. Cadastre-se primeiro.';
-      } else if (error.code === 'auth/invalid-credential') {
-        message = 'Senha incorreta.';
-      } else if (error.code === 'auth/invalid-email') {
-        message = 'E-mail inválido.';
-      } else {
-        message = error.message;
-      }
-
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: message,
-      });
+      handleAuthError(error);
     }
   };
 
-  const handlePasswordReset = async () => {
-    if (!email) {
-      Toast.show({
-        type: 'error',
-        text1: 'Aviso!',
-        text2: 'Informe o e-mail para recuperar a senha.',
-      });
-      return;
-    }
+  // Prompt para habilitar biometria (aparece só se ainda não habilitado)
+  const promptEnableBiometrics = async () => {
+    if (!biometricAvailable) return;
 
-    try {
-      await resetPassword(email);
-      Toast.show({
-        type: 'success',
-        text1: 'E-mail enviado!',
-        text2: 'Verifique sua caixa de entrada para redefinir a senha.',
-      });
-    } catch (error) {
-      let message = '';
-      if (error.code === 'auth/user-not-found') {
-        message = 'Usuário não encontrado.';
-      } else if (error.code === 'auth/invalid-email') {
+    const useBio = await AsyncStorage.getItem("useBiometrics");
+    if (useBio === "true") return; // já habilitado, não mostra alerta
+
+    Alert.alert(
+      "Autenticação biométrica",
+      "Deseja usar sua biometria para futuros logins?",
+      [
+        { text: "Agora não", style: "cancel" },
+        { 
+          text: "Sim", 
+          onPress: async () => await AsyncStorage.setItem("useBiometrics", "true")
+        }
+      ]
+    );
+  };
+
+  // Login via biometria
+  const handleBiometricAuth = async () => {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Login com biometria",
+      cancelLabel: "Cancelar",
+    });
+
+    if (result.success) {
+      showToast('success', 'Login realizado!', 'Autenticado via biometria 👆');
+      navigation.navigate('HomeScreen');
+    }
+  };
+
+  // Reset de senha
+  const handlePasswordReset = () => navigation.navigate('ForgotPassword');
+
+  // Mostra toast
+  const showToast = (type, title, message) => {
+    Toast.show({ type, text1: title, text2: message });
+  };
+
+  // Tratamento de erros do Firebase Auth
+  const handleAuthError = (error) => {
+    let message = '';
+    switch (error.code) {
+      case 'auth/user-not-found':
+        message = 'Usuário não encontrado. Cadastre-se primeiro.';
+        break;
+      case 'auth/invalid-credential':
+        message = 'Senha incorreta.';
+        break;
+      case 'auth/invalid-email':
         message = 'E-mail inválido.';
-      } else {
+        break;
+      default:
         message = error.message;
-      }
-
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: message,
-      });
     }
+    showToast('error', 'Erro', message);
   };
 
   return (
-    <View style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>Bem-vindo de volta 👋</Text>
 
         <TextInput
@@ -126,6 +156,15 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
         </TouchableOpacity>
 
+        {biometricAvailable && (
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: '#555' }]}
+            onPress={handleBiometricAuth}
+          >
+            <Text style={styles.buttonText}>Entrar com biometria</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerText}>
             Ainda não tem conta? <Text style={styles.registerLink}>Cadastre-se</Text>
@@ -135,14 +174,14 @@ export default function LoginScreen({ navigation }) {
         <TouchableOpacity onPress={handlePasswordReset}>
           <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
         </TouchableOpacity>
-      </KeyboardAvoidingView>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#fff',
     justifyContent: 'center',
     paddingHorizontal: 30,

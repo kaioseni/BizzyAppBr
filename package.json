@@ -27,7 +27,8 @@
     "react-native-mask-text": "^0.15.0",
     "react-native-svg": "15.11.2",
     "react-native-toast-message": "^2.3.3",
-    "expo-file-system": "~18.1.11"
+    "expo-file-system": "~18.1.11",
+    "expo-local-authentication": "~16.0.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
