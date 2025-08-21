@@ -76,48 +76,64 @@ export default function Register({ navigation }) {
   };
 
   const handleRegister = async () => {
-    if (!nomeEstabelecimento || !telefone || !email || !password) {
-      Toast.show({
-        type: "error",
-        text1: "Campos obrigatórios",
-        text2: "Preencha todos os campos antes de continuar",
-      });
-      return;
+  if (!nomeEstabelecimento || !telefone || !email || !password) {
+    Toast.show({
+      type: "error",
+      text1: "Campos obrigatórios",
+      text2: "Preencha todos os campos antes de continuar",
+    });
+    return;
+  }
+
+  try {
+    setLoadingRegister(true);
+    await register(email, password, {
+      nomeEstabelecimento,
+      telefone,
+      logo,
+      cep,
+      logradouro,
+      bairro,
+      cidade,
+      estado,
+      numero,
+      complemento,
+    });
+
+    Toast.show({
+      type: "success",
+      text1: "Sucesso!",
+      text2: "Usuário criado com sucesso 🎉",
+    });
+
+    navigation.navigate("HomeScreen");
+  } catch (error) {
+    let message = "Ocorreu um erro no cadastro.";
+
+    switch (error.code) {
+      case "auth/email-already-in-use":
+        message = "Este e-mail já está em uso.";
+        break;
+      case "auth/invalid-email":
+        message = "E-mail inválido.";
+        break;
+      case "auth/password-does-not-meet-requirements":
+        message = "A senha não atende os critérios mínimos.";
+        break;
+      default:
+        message = error.message;
+        break;
     }
 
-    try {
-      setLoadingRegister(true);
-      await register(email, password, {
-        nomeEstabelecimento,
-        telefone,
-        logo,
-        cep,
-        logradouro,
-        bairro,
-        cidade,
-        estado,
-        numero,
-        complemento,
-      });
-
-      Toast.show({
-        type: "success",
-        text1: "Sucesso!",
-        text2: "Usuário criado com sucesso 🎉",
-      });
-
-      navigation.navigate('HomeScreen');
-
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Erro no cadastro",
-        text2: error.message,
-      });
-    } finally {
-      setLoadingRegister(false);
-    }
-  };
+    Toast.show({
+      type: "error",
+      text1: "Erro no cadastro",
+      text2: message,
+    });
+  } finally {
+    setLoadingRegister(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView
