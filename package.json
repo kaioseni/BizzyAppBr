@@ -28,7 +28,8 @@
     "react-native-svg": "15.11.2",
     "react-native-toast-message": "^2.3.3",
     "expo-file-system": "~18.1.11",
-    "expo-local-authentication": "~16.0.5"
+    "expo-local-authentication": "~16.0.5",
+    "@react-native-picker/picker": "2.11.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

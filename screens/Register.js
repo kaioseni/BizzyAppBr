@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import {
   TextInput,
   Text,
@@ -9,14 +9,18 @@ import {
   Dimensions,
   TouchableOpacity,
   Image,
+  View,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { MaskedTextInput } from "react-native-mask-text";
+import { Picker } from "@react-native-picker/picker";
 import { AuthContext } from "../contexts/AuthContext";
 import { buscarEnderecoPorCEP } from "../services/cep";
 import Toast from "react-native-toast-message";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase/firebaseConfig";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 export default function Register({ navigation }) {
   const { register } = useContext(AuthContext);
@@ -26,16 +30,29 @@ export default function Register({ navigation }) {
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [ramoAtividade, setRamoAtividade] = useState("");
 
-  const [cep, setCEP] = useState("");
-  const [logradouro, setLogradouro] = useState("");
-  const [bairro, setBairro] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [estado, setEstado] = useState("");
-  const [numero, setNumero] = useState("");
-  const [complemento, setComplemento] = useState("");
+  const [opcoesRamo, setOpcoesRamo] = useState([]);
+
+  const [endereco, setEndereco] = useState({
+    cep: "",
+    logradouro: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
+    numero: "",
+    complemento: "",
+  });
 
   const [loadingRegister, setLoadingRegister] = useState(false);
+
+  const handleEnderecoChange = (field, value) => {
+    setEndereco((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const showToast = (type, title, message) => {
+    Toast.show({ type, text1: title, text2: message });
+  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -44,96 +61,97 @@ export default function Register({ navigation }) {
       aspect: [1, 1],
       quality: 0.7,
     });
-
     if (!result.canceled) {
       setLogo(result.assets[0].uri);
     }
   };
 
   const handleBuscarCEP = async () => {
+    const { cep } = endereco;
     if (cep.replace(/\D/g, "").length < 8) {
-      Toast.show({
-        type: "error",
-        text1: "CEP inválido",
-        text2: "Digite um CEP válido!",
-      });
-      return;
+      return showToast("error", "CEP inválido", "Digite um CEP válido!");
     }
 
     try {
-      const endereco = await buscarEnderecoPorCEP(cep);
-      setLogradouro(endereco.logradouro);
-      setBairro(endereco.bairro);
-      setCidade(endereco.cidade);
-      setEstado(endereco.estado);
+      const data = await buscarEnderecoPorCEP(cep);
+      setEndereco((prev) => ({
+        ...prev,
+        logradouro: data.logradouro,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+      }));
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Erro ao buscar CEP",
-        text2: error.message,
-      });
+      showToast("error", "Erro ao buscar CEP", error.message);
     }
   };
 
-  const handleRegister = async () => {
-  if (!nomeEstabelecimento || !telefone || !email || !password) {
-    Toast.show({
-      type: "error",
-      text1: "Campos obrigatórios",
-      text2: "Preencha todos os campos antes de continuar",
-    });
-    return;
-  }
-
-  try {
-    setLoadingRegister(true);
-    await register(email, password, {
-      nomeEstabelecimento,
-      telefone,
-      logo,
-      cep,
-      logradouro,
-      bairro,
-      cidade,
-      estado,
-      numero,
-      complemento,
-    });
-
-    Toast.show({
-      type: "success",
-      text1: "Sucesso!",
-      text2: "Usuário criado com sucesso 🎉",
-    });
-
-    navigation.navigate("HomeScreen");
-  } catch (error) {
-    let message = "Ocorreu um erro no cadastro.";
-
-    switch (error.code) {
-      case "auth/email-already-in-use":
-        message = "Este e-mail já está em uso.";
-        break;
-      case "auth/invalid-email":
-        message = "E-mail inválido.";
-        break;
-      case "auth/password-does-not-meet-requirements":
-        message = "A senha não atende os critérios mínimos.";
-        break;
-      default:
-        message = error.message;
-        break;
+  const validateFields = () => {
+    if (!nomeEstabelecimento || !telefone || !email || !password) {
+      showToast("error", "Campos obrigatórios", "Preencha todos os campos");
+      return false;
     }
+    if (!ramoAtividade) {
+      showToast("error", "Ramo de atividade", "Selecione uma opção");
+      return false;
+    }
+    return true;
+  };
 
-    Toast.show({
-      type: "error",
-      text1: "Erro no cadastro",
-      text2: message,
-    });
-  } finally {
-    setLoadingRegister(false);
-  }
-};
+  const handleRegister = async () => {
+    if (!validateFields()) return;
+
+    try {
+      setLoadingRegister(true);
+      await register(email, password, {
+        nomeEstabelecimento,
+        telefone,
+        logo,
+        ramoAtividade,
+        ...endereco,
+      });
+
+      showToast("success", "Sucesso!", "Usuário criado com sucesso 🎉");
+      navigation.navigate("HomeScreen");
+    } catch (error) {
+      let message = "Ocorreu um erro no cadastro.";
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          message = "Este e-mail já está em uso.";
+          break;
+        case "auth/invalid-email":
+          message = "E-mail inválido.";
+          break;
+        case "auth/password-does-not-meet-requirements":
+          message = "A senha não atende os critérios mínimos.";
+          break;
+        default:
+          message = error.message;
+          break;
+      }
+      showToast("error", "Erro no cadastro", message);
+    } finally {
+      setLoadingRegister(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchRamos = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "ramosDeAtividade"));
+        const lista = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setOpcoesRamo(lista);
+      } catch (err) {
+        console.error("Erro ao carregar ramos:", err);
+        showToast("error", "Erro", "Não foi possível carregar os ramos de atividade");
+      }
+    };
+
+    fetchRamos();
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -187,49 +205,43 @@ export default function Register({ navigation }) {
           mask="99999-999"
           keyboardType="number-pad"
           placeholder="CEP"
-          value={cep}
-          onChangeText={setCEP}
+          value={endereco.cep}
+          onChangeText={(v) => handleEnderecoChange("cep", v)}
           onEndEditing={handleBuscarCEP}
           style={[styles.input, { width: width * 0.9 }]}
         />
 
-        <TextInput
-          placeholder="Logradouro"
-          value={logradouro}
-          onChangeText={setLogradouro}
-          style={[styles.input, { width: width * 0.9 }]}
-        />
-        <TextInput
-          placeholder="Bairro"
-          value={bairro}
-          onChangeText={setBairro}
-          style={[styles.input, { width: width * 0.9 }]}
-        />
-        <TextInput
-          placeholder="Cidade"
-          value={cidade}
-          onChangeText={setCidade}
-          style={[styles.input, { width: width * 0.9 }]}
-        />
-        <TextInput
-          placeholder="Estado"
-          value={estado}
-          onChangeText={setEstado}
-          style={[styles.input, { width: width * 0.9 }]}
-        />
-        <TextInput
-          placeholder="Número"
-          value={numero}
-          onChangeText={setNumero}
-          keyboardType="number-pad"
-          style={[styles.input, { width: width * 0.9 }]}
-        />
-        <TextInput
-          placeholder="Complemento"
-          value={complemento}
-          onChangeText={setComplemento}
-          style={[styles.input, { width: width * 0.9 }]}
-        />
+        {[
+          ["logradouro", "Logradouro"],
+          ["bairro", "Bairro"],
+          ["cidade", "Cidade"],
+          ["estado", "Estado"],
+          ["numero", "Número", "number-pad"],
+          ["complemento", "Complemento"],
+        ].map(([field, placeholder, keyboardType]) => (
+          <TextInput
+            key={field}
+            placeholder={placeholder}
+            value={endereco[field]}
+            onChangeText={(v) => handleEnderecoChange(field, v)}
+            keyboardType={keyboardType || "default"}
+            style={[styles.input, { width: width * 0.9 }]}
+          />
+        ))}
+
+        <View style={[styles.input, { width: width * 0.9, height:60, paddingHorizontal: 0, justifyContent: "center" }]}>
+          <Picker
+            selectedValue={ramoAtividade}
+            onValueChange={setRamoAtividade}
+            style={{ width: "100%", height: "100%" }}
+            dropdownIconColor="#555"
+          >
+            <Picker.Item label="Selecione o ramo de atividade" value="" enabled={false} />
+            {opcoesRamo.map((ramo) => (
+              <Picker.Item key={ramo.id} label={ramo.Nome} value={ramo.id} />
+            ))}
+          </Picker>
+        </View>
 
         <TouchableOpacity
           style={[styles.botao, loadingRegister && { backgroundColor: "#7fbdea" }]}
@@ -251,7 +263,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 30,
+    paddingVertical: height * 0.08,
   },
   input: {
     height: 50,

@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }) => {
         numero: extraData.numero,
         complemento: extraData.complemento,
         logo: logoUrl, 
+        ramoAtividade: extraData.ramoAtividade,
         createdAt: new Date(),
       });
 
