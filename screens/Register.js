@@ -23,7 +23,7 @@ import { db } from "../firebase/firebaseConfig";
 const { width, height } = Dimensions.get("window");
 
 export default function Register({ navigation }) {
-  const { register } = useContext(AuthContext);
+  const { register, promptEnableBiometrics } = useContext(AuthContext);
 
   const [logo, setLogo] = useState(null);
   const [nomeEstabelecimento, setNomeEstabelecimento] = useState("");
@@ -112,6 +112,9 @@ export default function Register({ navigation }) {
       });
 
       showToast("success", "Sucesso!", "Usuário criado com sucesso 🎉");
+
+      await promptEnableBiometrics();
+
       navigation.navigate("HomeScreen");
     } catch (error) {
       let message = "Ocorreu um erro no cadastro.";
@@ -229,7 +232,7 @@ export default function Register({ navigation }) {
           />
         ))}
 
-        <View style={[styles.input, { width: width * 0.9, height:60, paddingHorizontal: 0, justifyContent: "center" }]}>
+        <View style={[styles.input, { width: width * 0.9, height: 60, paddingHorizontal: 0, justifyContent: "center" }]}>
           <Picker
             selectedValue={ramoAtividade}
             onValueChange={setRamoAtividade}

@@ -4,6 +4,9 @@ import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEm
 import { doc, setDoc, collection } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as FileSystem from "expo-file-system";
+import * as LocalAuthentication from 'expo-local-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from "react-native";
 
 export const AuthContext = createContext();
 
@@ -11,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const storage = getStorage();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [biometricAvailable, setBiometricAvailable] = useState();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -21,22 +25,22 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const uploadImageAsync = async (uri, path) => {
-  try {
-    
-    const response = await fetch(uri);
-    const blob = await response.blob();
+    try {
 
-    const storageRef = ref(storage, path);
+      const response = await fetch(uri);
+      const blob = await response.blob();
 
-    await uploadBytes(storageRef, blob);
+      const storageRef = ref(storage, path);
 
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
-  } catch (error) {
-    console.log("Erro ao fazer upload da imagem:", error);
-    throw new Error("Falha ao fazer upload da imagem.");
-  }
-};
+      await uploadBytes(storageRef, blob);
+
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    } catch (error) {
+      console.log("Erro ao fazer upload da imagem:", error);
+      throw new Error("Falha ao fazer upload da imagem.");
+    }
+  };
 
   const register = async (email, password, extraData) => {
     try {
@@ -64,7 +68,7 @@ export const AuthProvider = ({ children }) => {
         estado: extraData.estado,
         numero: extraData.numero,
         complemento: extraData.complemento,
-        logo: logoUrl, 
+        logo: logoUrl,
         ramoAtividade: extraData.ramoAtividade,
         createdAt: new Date(),
       });
@@ -80,8 +84,51 @@ export const AuthProvider = ({ children }) => {
     return sendPasswordResetEmail(auth, email);
   };
 
+  const promptEnableBiometrics = async () => {
+    if (!biometricAvailable) return;
+
+    const useBio = await AsyncStorage.getItem("useBiometrics");
+    if (useBio === "true") return;
+
+    Alert.alert(
+      "Autenticação biométrica",
+      "Deseja usar sua biometria para futuros logins?",
+      [
+        { text: "Agora não", style: "cancel" },
+        {
+          text: "Sim",
+          onPress: async () => await AsyncStorage.setItem("useBiometrics", "true")
+        }
+      ]
+    );
+  };
+
+  const initBiometric = async () => {
+    const compatible = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    setBiometricAvailable(compatible && enrolled);
+
+    const useBio = await AsyncStorage.getItem("useBiometrics");
+    if (compatible && enrolled && useBio === "true") {
+      return await handleBiometricAuth();
+    }
+    return false;
+  };
+
+  const handleBiometricAuth = async () => {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Login com biometria",
+      cancelLabel: "Cancelar",
+    });
+
+    if (result.success) {
+      return true;
+    }
+    return false;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, register, resetPassword }}>
+    <AuthContext.Provider value={{ user, loading, register, resetPassword, promptEnableBiometrics, initBiometric }}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,37 +7,31 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 import Toast from 'react-native-toast-message';
 import { AuthContext } from "../contexts/AuthContext";
-import * as LocalAuthentication from 'expo-local-authentication';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
-  const { resetPassword } = useContext(AuthContext);
+  const { promptEnableBiometrics, initBiometric } = useContext(AuthContext);
 
   useEffect(() => {
-    initBiometric();
+    const checkBio = async () => {
+      const success = await initBiometric();
+      if (success) {
+        showToast('success', 'Login realizado!', 'Autenticado via biometria 👆');
+        navigation.navigate('HomeScreen');
+      }
+    };
+    checkBio();
   }, []);
 
-  const initBiometric = async () => {
-    const compatible = await LocalAuthentication.hasHardwareAsync();
-    const enrolled = await LocalAuthentication.isEnrolledAsync();
-    setBiometricAvailable(compatible && enrolled);
 
-    const useBio = await AsyncStorage.getItem("useBiometrics");
-    if (compatible && enrolled && useBio === "true") {
-      handleBiometricAuth();
-    }
-  };
 
   const handleLogin = async () => {
     if (!email || !senha) {
@@ -59,36 +53,6 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const promptEnableBiometrics = async () => {
-    if (!biometricAvailable) return;
-
-    const useBio = await AsyncStorage.getItem("useBiometrics");
-    if (useBio === "true") return; 
-
-    Alert.alert(
-      "Autenticação biométrica",
-      "Deseja usar sua biometria para futuros logins?",
-      [
-        { text: "Agora não", style: "cancel" },
-        { 
-          text: "Sim", 
-          onPress: async () => await AsyncStorage.setItem("useBiometrics", "true")
-        }
-      ]
-    );
-  };
-
-  const handleBiometricAuth = async () => {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Login com biometria",
-      cancelLabel: "Cancelar",
-    });
-
-    if (result.success) {
-      showToast('success', 'Login realizado!', 'Autenticado via biometria 👆');
-      navigation.navigate('HomeScreen');
-    }
-  };
 
   const handlePasswordReset = () => navigation.navigate('ForgotPassword');
 
@@ -149,7 +113,7 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
         </TouchableOpacity>
 
-        
+
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerText}>
             Ainda não tem conta? <Text style={styles.registerLink}>Cadastre-se</Text>
