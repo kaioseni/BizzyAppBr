@@ -8,8 +8,6 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/firebaseConfig';
 import Toast from 'react-native-toast-message';
 import { AuthContext } from "../contexts/AuthContext";
 
@@ -18,8 +16,9 @@ export default function LoginScreen({ navigation }) {
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { promptEnableBiometrics, initBiometric, setUser } = useContext(AuthContext);
+  const { promptEnableBiometrics, initBiometric, login } = useContext(AuthContext);
 
+  // Tenta login via biometria ao abrir
   useEffect(() => {
     const checkBio = async () => {
       const success = await initBiometric();
@@ -31,35 +30,27 @@ export default function LoginScreen({ navigation }) {
     checkBio();
   }, []);
 
-
-
   const handleLogin = async () => {
-  if (!email || !senha) {
-    showToast('error', 'Erro', 'Preencha todos os campos');
-    return;
-  }
+    if (!email || !senha) {
+      showToast('error', 'Erro', 'Preencha todos os campos');
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-    const currentUser = userCredential.user;
+    setLoading(true);
+    try {
+      const currentUser = await login(email, senha);
 
-    // Atualiza o user no contexto como objeto { uid, email }
-    setUser({ uid: currentUser.uid, email: currentUser.email });
+      showToast('success', 'Login realizado!', 'Bem-vindo de volta 👋');
 
-    showToast('success', 'Login realizado!', 'Bem-vindo de volta 👋');
+      await promptEnableBiometrics(currentUser.uid);
 
-    await promptEnableBiometrics();
-
-    navigation.navigate('HomeScreen');
-  } catch (error) {
-    handleAuthError(error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+      navigation.navigate('HomeScreen');
+    } catch (error) {
+      handleAuthError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePasswordReset = () => navigation.navigate('ForgotPassword');
 
@@ -119,7 +110,6 @@ export default function LoginScreen({ navigation }) {
         <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.8}>
           <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
         </TouchableOpacity>
-
 
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerText}>
