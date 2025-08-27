@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { promptEnableBiometrics, initBiometric } = useContext(AuthContext);
+  const { promptEnableBiometrics, initBiometric, setUser } = useContext(AuthContext);
 
   useEffect(() => {
     const checkBio = async () => {
@@ -34,24 +34,31 @@ export default function LoginScreen({ navigation }) {
 
 
   const handleLogin = async () => {
-    if (!email || !senha) {
-      return showToast('error', 'Erro', 'Preencha todos os campos');
-    }
+  if (!email || !senha) {
+    showToast('error', 'Erro', 'Preencha todos os campos');
+    return;
+  }
 
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, senha);
-      setLoading(false);
-      showToast('success', 'Login realizado!', 'Bem-vindo de volta 👋');
+  setLoading(true);
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+    const currentUser = userCredential.user;
 
-      await promptEnableBiometrics();
+    // Atualiza o user no contexto como objeto { uid, email }
+    setUser({ uid: currentUser.uid, email: currentUser.email });
 
-      navigation.navigate('HomeScreen');
-    } catch (error) {
-      setLoading(false);
-      handleAuthError(error);
-    }
-  };
+    showToast('success', 'Login realizado!', 'Bem-vindo de volta 👋');
+
+    await promptEnableBiometrics();
+
+    navigation.navigate('HomeScreen');
+  } catch (error) {
+    handleAuthError(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 
   const handlePasswordReset = () => navigation.navigate('ForgotPassword');

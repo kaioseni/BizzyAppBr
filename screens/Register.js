@@ -12,13 +12,13 @@ import {
   View,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { MaskedTextInput } from "react-native-mask-text";
 import { Picker } from "@react-native-picker/picker";
 import { AuthContext } from "../contexts/AuthContext";
 import { buscarEnderecoPorCEP } from "../services/cep";
 import Toast from "react-native-toast-message";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
+import { MaskedTextInput } from "react-native-mask-text";
 
 const { width, height } = Dimensions.get("window");
 

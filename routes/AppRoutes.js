@@ -12,14 +12,13 @@ export default function AppRoutes({ viewOnboarding }) {
   return (
       <Stack.Navigator
         initialRouteName={viewOnboarding ? 'LoginScreen' : 'OnboardingCarousel'}
-        screenOptions={{ headerShown: false }}
       >
-        <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} />
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="HomeScreen" component={HomeScreen} />
-        <Stack.Screen name="Register" component={Register} />
-        <Stack.Screen name='ForgotPassword' component={ForgotPassword} />
-        <Stack.Screen name='AppointmentsScreen' component={AppointmentsScreen} />
+        <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} options={{ headerShown: false }}/>
+        <Stack.Screen name="LoginScreen" component={LoginScreen}  options={{ headerShown: false }}/>
+        <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="Register" component={Register} options={{ title: '' }} />
+        <Stack.Screen name='ForgotPassword' component={ForgotPassword} options={{ title: '', headerShown: true }}/>
+        <Stack.Screen name='AppointmentsScreen' component={AppointmentsScreen} options={{title: '', headerShown: true }}/>
       </Stack.Navigator>
   );
 }

@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaskedTextInput } from "react-native-mask-text";
-import { criarAgendamento } from "../services/appointments";
+import { createAgendamento } from "../services/appointments";
 import Toast from "react-native-toast-message";
+import { AuthContext } from "../contexts/AuthContext";
 
 export default function AppointmentsScreen({ navigation }) {
+    
+    const { user } = useContext(AuthContext);
+    const [userAux, setUserAux] = useState(user.uid);
+
     const [nomeCliente, setNomeCliente] = useState("");
     const [telefone, setTelefone] = useState("");
     const [dataHora, setDataHora] = useState(new Date());
@@ -56,7 +61,7 @@ export default function AppointmentsScreen({ navigation }) {
         if (!validarCampos()) return;
 
         try {
-            await criarAgendamento({ nomeCliente, telefone, dataHora });
+            await createAgendamento({ userAux, nomeCliente, telefone, dataHora });
             Toast.show({ type: "success", text1: "Agendamento cadastrado com sucesso!" });
 
             setNomeCliente("");
