@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation }) {
       const success = await initBiometric();
       if (success) {
         showToast('success', 'Login realizado!', 'Autenticado via biometria 👆');
-        navigation.navigate('HomeScreen');
+        navigation.navigate("MainTabs", { screen: "Home" });
       }
     };
     checkBio();
@@ -44,7 +44,7 @@ export default function LoginScreen({ navigation }) {
 
       await promptEnableBiometrics(currentUser.uid);
 
-      navigation.navigate('HomeScreen');
+      navigation.navigate("MainTabs", { screen: "Home" });
     } catch (error) {
       handleAuthError(error);
     } finally {
