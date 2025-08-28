@@ -1,9 +1,8 @@
 import { db } from "../firebase/firebaseConfig";
 import { collection, addDoc, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 
-export async function createAgendamento({ userAux, nomeCliente, telefone, dataHora }) {
+export async function createAgendamento({ userAux, nomeCliente, telefone, dataHora, servico, colaborador }) {
   const agendamentosRef = collection(db, "agendamentos");
-
   const dataHoraTimestamp = dataHora instanceof Date ? Timestamp.fromDate(dataHora) : dataHora;
 
   const q = query(agendamentosRef, where("dataHora", "==", dataHoraTimestamp));
@@ -16,6 +15,8 @@ export async function createAgendamento({ userAux, nomeCliente, telefone, dataHo
   await addDoc(agendamentosRef, {
     nomeCliente,
     telefone,
+    servico,
+    colaborador: colaborador || null, 
     dataHora: dataHoraTimestamp,
     createdAt: Timestamp.fromDate(new Date()),
     userAux,
@@ -30,6 +31,7 @@ export async function createAgendamento({ userAux, nomeCliente, telefone, dataHo
  * @param {string} params.nomeCliente 
  * @param {string} params.telefone
  * @param {Date|string} params.dataHora
+ * @param {string} params.colaboradorSelecionado
  * 
  * @returns {Promise<string>} 
  */
