@@ -1,16 +1,5 @@
 import { useContext, useState, useEffect } from "react";
-import {
-  TextInput,
-  Text,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Dimensions,
-  TouchableOpacity,
-  Image,
-  View,
-} from "react-native";
+import { TextInput, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Dimensions, TouchableOpacity, Image, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import { AuthContext } from "../contexts/AuthContext";

@@ -1,12 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Dimensions 
-} from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Plus, Calendar, User } from "lucide-react-native";
 import dayjs from "dayjs";
@@ -61,9 +54,9 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      
-      <TouchableOpacity 
-        style={styles.dateButton} 
+
+      <TouchableOpacity
+        style={styles.dateButton}
         onPress={() => setShowPicker(true)}
       >
         <Calendar size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -97,7 +90,7 @@ export default function HomeScreen() {
             >
               <View style={styles.cardHeader}>
                 <Text style={[styles.time, atrasado && { color: "red" }]}>
-                  {item.dataHora instanceof Date 
+                  {item.dataHora instanceof Date
                     ? dayjs(item.dataHora).format("HH:mm")
                     : dayjs(item.dataHora.toDate()).format("HH:mm")}
                 </Text>
@@ -231,15 +224,15 @@ const styles = StyleSheet.create({
     fontSize: width * 0.042
   },
   separator: { height: 8 },
-  emptyContainer: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    height: height * 0.6 
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: height * 0.6
   },
-  emptyText: { 
-    color: "#777", 
-    fontSize: width * 0.045, 
-    textAlign: "center" 
+  emptyText: {
+    color: "#777",
+    fontSize: width * 0.045,
+    textAlign: "center"
   },
 });

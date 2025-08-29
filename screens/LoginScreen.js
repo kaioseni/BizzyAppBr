@@ -1,13 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import {
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
+import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { AuthContext } from "../contexts/AuthContext";
 
@@ -18,7 +10,6 @@ export default function LoginScreen({ navigation }) {
 
   const { promptEnableBiometrics, initBiometric, login } = useContext(AuthContext);
 
-  // Tenta login via biometria ao abrir
   useEffect(() => {
     const checkBio = async () => {
       const success = await initBiometric();

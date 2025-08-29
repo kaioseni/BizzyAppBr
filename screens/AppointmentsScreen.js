@@ -7,7 +7,7 @@ import { createAgendamento } from "../services/appointments";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../contexts/AuthContext";
 import { db } from "../firebase/firebaseConfig";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
 
 export default function AppointmentsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -55,25 +55,28 @@ export default function AppointmentsScreen({ navigation }) {
   }, [user.uid]);
 
   useEffect(() => {
-    const fetchColaboradores = async () => {
-      try {
-        const colRef = collection(db, "colaboradores");
-        const colSnap = await getDocs(colRef);
+  if (!user?.uid) return; // garante que user está carregado
 
-        const listaColaboradores = colSnap.docs.map(doc => ({
-          id: doc.id,
-          nome: doc.data().Nome 
-        }));
+  const fetchColaboradores = async () => {
+    try {
+      const colRef = collection(db, "colaboradores");
+      const q = query(colRef, where("idEstabelecimento", "==", user.uid));
+      const colSnap = await getDocs(q);
 
-        setColaboradores(listaColaboradores);
-      } catch (error) {
-        console.error("Erro ao buscar colaboradores:", error);
-        Toast.show({ type: "error", text1: "Erro ao carregar colaboradores" });
-      }
-    };
+      const listaColaboradores = colSnap.docs.map(doc => ({
+        id: doc.id,
+        nome: doc.data().nome, 
+      }));
 
-    fetchColaboradores();
-  }, []);
+      setColaboradores(listaColaboradores);
+    } catch (error) {
+      console.error("Erro ao buscar colaboradores:", error);
+      Toast.show({ type: "error", text1: "Erro ao carregar colaboradores" });
+    }
+  };
+
+  fetchColaboradores();
+}, [user]);
 
   const validarCampos = () => {
     if (!nomeCliente.trim()) {
@@ -184,6 +187,7 @@ export default function AppointmentsScreen({ navigation }) {
           <Picker.Item label="Selecione um colaborador (opcional)" value="" enabled={true} />
           {colaboradores.map((c) => (
             <Picker.Item key={c.id} label={c.nome} value={c.nome} />
+            
           ))}
         </Picker>
       </View>

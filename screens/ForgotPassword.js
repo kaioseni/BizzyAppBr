@@ -1,13 +1,5 @@
 import React, { useState, useContext } from 'react';
-import {
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  View
-} from 'react-native';
+import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { AuthContext } from "../contexts/AuthContext";
 

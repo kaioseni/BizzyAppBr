@@ -16,7 +16,7 @@ export async function createAgendamento({ userAux, nomeCliente, telefone, dataHo
     nomeCliente,
     telefone,
     servico,
-    colaborador: colaborador || null, 
+    colaborador: colaborador || null,
     dataHora: dataHoraTimestamp,
     createdAt: Timestamp.fromDate(new Date()),
     userAux,
@@ -42,10 +42,10 @@ export const getAppointmentsByDate = async (uid, startOfDay, endOfDay) => {
 
     const q = query(
       agendamentosRef,
-      where("userAux", "==", uid), 
+      where("userAux", "==", uid),
       where("dataHora", ">=", Timestamp.fromDate(startOfDay)),
       where("dataHora", "<=", Timestamp.fromDate(endOfDay)),
-      orderBy("dataHora", "asc") 
+      orderBy("dataHora", "asc")
     );
 
     const snapshot = await getDocs(q);

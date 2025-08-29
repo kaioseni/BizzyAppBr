@@ -6,6 +6,11 @@ import ForgotPassword from "../screens/ForgotPassword";
 import AppointmentsScreen from "../screens/AppointmentsScreen";
 import AboutScreen from "../screens/About";
 import MainTabs from "./MainTabs";
+import ProfileScreen from "../screens/ProfileScreen";
+import CollaboratorsScreen from "../screens/CollaboratorsScreen";
+import CreateCollaboratorScreen from "../screens/CreateCollaboratorScreen";
+import EditCollaboratorScreen from "../screens/EditCollaboratorScreen";
+import ClientsScreen from "../screens/ClientsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +26,11 @@ export default function AppRoutes({ viewOnboarding }) {
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="AppointmentsScreen" component={AppointmentsScreen} options={{ title: "", headerShown: true }} />
       <Stack.Screen name="About" component={AboutScreen} options={{ title: "" }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil do Estabelecimento" }} />
+      <Stack.Screen name="CollaboratorsScreen" component={CollaboratorsScreen} options={{ title: "Colaboradores" }} />
+      <Stack.Screen name="CreateCollaboratorScreen" component={CreateCollaboratorScreen} options={{ title: "Novo Colaborador" }} />
+      <Stack.Screen name="EditCollaboratorScreen" component={EditCollaboratorScreen} options={{ title: "Editar colaborador" }} />
+      <Stack.Screen name="ClientsScreen" component={ClientsScreen} options={{ title: "Relatório de Clientes" }} />
 
     </Stack.Navigator>
   );
