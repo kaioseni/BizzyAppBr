@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
-import { User, Calendar, Settings, Users, Info, FileChartColumnIncreasing } from "lucide-react-native";
+import { User, Wrench , Settings, Users, Info, FileChartColumnIncreasing } from "lucide-react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -9,6 +9,7 @@ export default function MoreScreen({ navigation }) {
     { label: "Colaboradores", icon: Users, screen: "CollaboratorsScreen" },
     { label: "Configurações", icon: Settings, screen: "Settings" },
     { label: "Relatório", icon: FileChartColumnIncreasing, screen: "ClientsScreen" },
+    { label: 'Serviços', icon: Wrench, screen: "ServicesScreen" },
     { label: "Sobre", icon: Info, screen: "About" },
   ];
 
