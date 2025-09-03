@@ -7,12 +7,11 @@ import { createAgendamento } from "../services/appointments";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../contexts/AuthContext";
 import { db } from "../firebase/firebaseConfig";
-import { doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
 
 export default function AppointmentsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
 
-  const [userAux, setUserAux] = useState(user.uid);
   const [nomeCliente, setNomeCliente] = useState("");
   const [telefone, setTelefone] = useState("");
   const [dataHora, setDataHora] = useState(new Date());
@@ -25,58 +24,71 @@ export default function AppointmentsScreen({ navigation }) {
   const [colaboradores, setColaboradores] = useState([]);
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState("");
 
+  const [favoritosIds, setFavoritosIds] = useState(new Set());
+
   useEffect(() => {
+    if (!user?.uid) return;
+
     const fetchServicos = async () => {
       try {
         const estRef = doc(db, "estabelecimentos", user.uid);
         const estSnap = await getDoc(estRef);
+        if (!estSnap.exists()) return;
 
-        if (estSnap.exists()) {
-          const { ramoAtividade } = estSnap.data();
+        const { ramoAtividade } = estSnap.data();
+        if (!ramoAtividade) return;
 
-          if (ramoAtividade) {
-            const servicosRef = collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns");
-            const servicosSnap = await getDocs(servicosRef);
+        const servicosRef = collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns");
+        const servicosSnap = await getDocs(servicosRef);
 
-            const listaServicos = servicosSnap.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-            setServicos(listaServicos);
-          }
-        }
+        const listaServicos = servicosSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const favRef = collection(db, "users", user.uid, "favoritos");
+        const unsubscribeFav = onSnapshot(favRef, (snapshot) => {
+          const favIdsSet = new Set(snapshot.docs.map((doc) => doc.id));
+          setFavoritosIds(favIdsSet);
+
+          const sorted = [...listaServicos].sort((a, b) => {
+            const aFav = favIdsSet.has(a.id);
+            const bFav = favIdsSet.has(b.id);
+            return aFav === bFav ? 0 : aFav ? -1 : 1;
+          });
+          setServicos(sorted);
+        });
       } catch (error) {
-        console.error("Erro ao buscar serviços:", error);
+        console.error("Erro ao buscar serviços/favoritos:", error);
         Toast.show({ type: "error", text1: "Erro ao carregar serviços" });
       }
     };
 
     fetchServicos();
-  }, [user.uid]);
+  }, [user?.uid]);
 
   useEffect(() => {
-  if (!user?.uid) return; // garante que user está carregado
+    if (!user?.uid) return;
 
-  const fetchColaboradores = async () => {
-    try {
-      const colRef = collection(db, "colaboradores");
-      const q = query(colRef, where("idEstabelecimento", "==", user.uid));
-      const colSnap = await getDocs(q);
+    const fetchColaboradores = async () => {
+      try {
+        const colRef = collection(db, "colaboradores");
+        const colSnap = await getDocs(colRef);
+        const listaColaboradores = colSnap.docs
+          .filter(doc => doc.data().idEstabelecimento === user.uid)
+          .map(doc => ({
+            id: doc.id,
+            nome: doc.data().nome,
+          }));
+        setColaboradores(listaColaboradores);
+      } catch (error) {
+        console.error("Erro ao buscar colaboradores:", error);
+        Toast.show({ type: "error", text1: "Erro ao carregar colaboradores" });
+      }
+    };
 
-      const listaColaboradores = colSnap.docs.map(doc => ({
-        id: doc.id,
-        nome: doc.data().nome, 
-      }));
-
-      setColaboradores(listaColaboradores);
-    } catch (error) {
-      console.error("Erro ao buscar colaboradores:", error);
-      Toast.show({ type: "error", text1: "Erro ao carregar colaboradores" });
-    }
-  };
-
-  fetchColaboradores();
-}, [user]);
+    fetchColaboradores();
+  }, [user?.uid]);
 
   const validarCampos = () => {
     if (!nomeCliente.trim()) {
@@ -106,9 +118,7 @@ export default function AppointmentsScreen({ navigation }) {
       newDate.setMinutes(dataHora.getMinutes());
       setDataHora(newDate);
 
-      if (Platform.OS === "android") {
-        setShowTimePicker(true);
-      }
+      if (Platform.OS === "android") setShowTimePicker(true);
     }
   };
 
@@ -126,12 +136,12 @@ export default function AppointmentsScreen({ navigation }) {
     if (!validarCampos()) return;
     try {
       await createAgendamento({
-        userAux,
+        userAux: user.uid,
         nomeCliente,
         telefone,
         dataHora,
         servico: servicoSelecionado,
-        colaborador: colaboradorSelecionado 
+        colaborador: colaboradorSelecionado,
       });
       Toast.show({ type: "success", text1: "Agendamento cadastrado com sucesso!" });
 
@@ -166,7 +176,7 @@ export default function AppointmentsScreen({ navigation }) {
         onChangeText={setTelefone}
         style={styles.input}
       />
-      
+
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={servicoSelecionado}
@@ -174,7 +184,11 @@ export default function AppointmentsScreen({ navigation }) {
         >
           <Picker.Item label="Selecione um serviço" value="" enabled={false} />
           {servicos.map((s) => (
-            <Picker.Item key={s.id} label={s.nome} value={s.nome} />
+            <Picker.Item
+              key={s.id}
+              label={s.nome + (favoritosIds.has(s.id) ? " ⭐" : "")}
+              value={s.id}
+            />
           ))}
         </Picker>
       </View>
@@ -184,10 +198,9 @@ export default function AppointmentsScreen({ navigation }) {
           selectedValue={colaboradorSelecionado}
           onValueChange={(itemValue) => setColaboradorSelecionado(itemValue)}
         >
-          <Picker.Item label="Selecione um colaborador (opcional)" value="" enabled={true} />
+          <Picker.Item label="Selecione um colaborador (opcional)" value="" />
           {colaboradores.map((c) => (
             <Picker.Item key={c.id} label={c.nome} value={c.nome} />
-            
           ))}
         </Picker>
       </View>
@@ -197,22 +210,11 @@ export default function AppointmentsScreen({ navigation }) {
       </TouchableOpacity>
 
       {showDatePicker && (
-        <DateTimePicker
-          value={dataHora}
-          mode="date"
-          display="default"
-          onChange={onDateChange}
-        />
+        <DateTimePicker value={dataHora} mode="date" display="default" onChange={onDateChange} />
       )}
 
       {showTimePicker && (
-        <DateTimePicker
-          value={dataHora}
-          mode="time"
-          is24Hour={true}
-          display="default"
-          onChange={onTimeChange}
-        />
+        <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={onTimeChange} />
       )}
 
       <TouchableOpacity style={styles.btn} onPress={handleAgendar}>
@@ -227,38 +229,37 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#fff",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 20,
     color: "#329de4",
-    textAlign: "center",
+    textAlign: "center"
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 15
   },
   pickerWrapper: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 15
   },
   btn: {
     backgroundColor: "#329de4",
-    padding: 15,
-    borderRadius: 8,
+    padding: 15, borderRadius: 8,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 10
   },
   btnText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 16
   },
 });

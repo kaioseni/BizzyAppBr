@@ -104,7 +104,7 @@ export default function Register({ navigation }) {
 
       await promptEnableBiometrics();
 
-      navigation.navigate("HomeScreen");
+      navigation.navigate("MainTabs", { screen: "Home" });
     } catch (error) {
       let message = "Ocorreu um erro no cadastro.";
       switch (error.code) {
