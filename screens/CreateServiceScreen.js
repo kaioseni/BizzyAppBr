@@ -1,8 +1,7 @@
-// screens/CriarServicoScreen.js
 import { useState, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { db } from "../firebase/firebaseConfig";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection } from "firebase/firestore";
 import { AuthContext } from "../contexts/AuthContext";
 import Toast from "react-native-toast-message";
 
@@ -24,36 +23,17 @@ export default function CerateServiceScreen({ navigation }) {
                 return;
             }
 
-            const estabRef = doc(db, "estabelecimentos", user.uid);
-            const estabSnap = await getDoc(estabRef);
-
-            if (!estabSnap.exists()) {
-                Toast.show({ type: "error", text1: "Estabelecimento não encontrado" });
-                return;
-            }
-
-            const estabData = estabSnap.data();
-            const ramoAtividade = estabData.ramoAtividade;
-
-            if (!ramoAtividade) {
-                Toast.show({ type: "error", text1: "Ramo de atividade não definido" });
-                return;
-            }
+            const servicosCriadosRef = collection(db, "users", user.uid, "servicosCriados");
 
             const idServico = nome.replace(/\s+/g, "").toLowerCase();
 
-            const servicoRef = doc(
-                db,
-                "ramosDeAtividade",
-                ramoAtividade,
-                "ServicosComuns",
-                idServico
-            );
+            const servicoRef = doc(servicosCriadosRef, idServico);
 
             await setDoc(servicoRef, {
                 nome,
                 descricao,
                 favorito: false,
+                createdAt: new Date()
             });
 
             Toast.show({ type: "success", text1: "Serviço criado com sucesso!" });
@@ -63,6 +43,7 @@ export default function CerateServiceScreen({ navigation }) {
             Toast.show({ type: "error", text1: "Erro ao criar serviço" });
         }
     };
+
 
     return (
         <View style={styles.container}>

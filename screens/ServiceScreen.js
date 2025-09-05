@@ -1,15 +1,13 @@
 import { useEffect, useState, useContext } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from "react-native";
 import { AuthContext } from "../contexts/AuthContext";
-import { Plus, Star, StarOff, Trash2, Edit3, Layers } from "lucide-react-native";
+import { Plus, Star, StarOff, Trash2, Edit3, Layers, User, Download } from "lucide-react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import Toast from "react-native-toast-message";
-import {
-  fetchServicosRamoRealtime, fetchServicosImportadosRealtime, fetchServicosPersonalizadosRealtime, fetchFavoritosRealtime, toggleFavorito, importarServicoUsuario, removerServicoImportado,
-  removerServicoPersonalizado, fetchRamos, fetchRamoUsuario
-} from "../services/servicesService";
+import { fetchServicosRamoRealtime, fetchServicosImportadosRealtime, fetchServicosPersonalizadosRealtime, fetchFavoritosRealtime, toggleFavorito, importarServicoUsuario, removerServicoImportado, removerServicoPersonalizado,
+  fetchRamos, fetchRamoUsuario } from "../services/servicesService";
 import { db } from "../firebase/firebaseConfig";
-import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, onSnapshot, deleteDoc } from "firebase/firestore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -36,12 +34,8 @@ export default function ServicesScreen({ navigation }) {
       setItemsDropdown(dropdownItems);
 
       const ramo = await fetchRamoUsuario(user.uid);
-      const selected = ramo && ramosDisponiveis.includes(ramo) ? ramo : "meusServicos";
-
       setRamoUsuario(ramo);
-      setRamoSelecionado(selected);
-
-      console.log("Ramo do usuário:", ramo, "| Dropdown inicial:", selected);
+      setRamoSelecionado("meusServicos"); 
     };
 
     init();
@@ -53,69 +47,71 @@ export default function ServicesScreen({ navigation }) {
 
     const unsubscribes = [];
 
-    const loadMeusServicos = async () => {
+    const servicosPadraoTemp = [];
+    const servicosImportadosTemp = [];
+    const servicosPersonalizadosTemp = [];
+    const servicosCriadosTemp = [];
+
+    const mergeAllServicos = () => {
+      setServicos([
+        ...servicosPersonalizadosTemp.map(s => ({ ...s, tipo: "personalizado" })),
+        ...servicosImportadosTemp.map(s => ({ ...s, tipo: "importado" })),
+        ...servicosCriadosTemp.map(s => ({ ...s, tipo: "criado" })),
+        ...servicosPadraoTemp.map(s => ({ ...s, tipo: "padrao" })),
+      ]);
+      setLoading(false);
+    };
+
+    if (ramoSelecionado === "meusServicos") {
       const unsubPadrao = fetchServicosRamoRealtime(ramoUsuario, async (padrao) => {
         const ocultosSnap = await getDocs(collection(db, "users", user.uid, "servicosOcultos"));
         const ocultosIds = new Set(ocultosSnap.docs.map(doc => doc.id));
 
-        const padraoVisiveis = padrao
-          .filter(s => !ocultosIds.has(s.id))
-          .map(s => ({ ...s, tipo: "padrao" }));
+        servicosPadraoTemp.length = 0;
+        servicosPadraoTemp.push(...padrao.filter(s => !ocultosIds.has(s.id)));
 
-        setServicos(prev => {
-          const personalizados = prev.filter(s => s.tipo === "personalizado");
-          return [...personalizados, ...padraoVisiveis];
-        });
-        setLoading(false);
+        mergeAllServicos();
       });
+      unsubscribes.push(unsubPadrao);
 
       const unsubPersonalizados = fetchServicosPersonalizadosRealtime(user.uid, (personalizados) => {
-        setServicos(prev => {
-          const padrao = prev.filter(s => s.tipo === "padrao");
-          return [...personalizados.map(p => ({ ...p, tipo: "personalizado" })), ...padrao];
-        });
-        setLoading(false);
+        servicosPersonalizadosTemp.length = 0;
+        servicosPersonalizadosTemp.push(...personalizados);
+        mergeAllServicos();
       });
-
-      unsubscribes.push(unsubPadrao, unsubPersonalizados);
-    };
-
-    const loadRamoExterno = async () => {
-      const unsubRamo = fetchServicosRamoRealtime(ramoSelecionado, async (lista) => {
-        const ocultosSnap = await getDocs(collection(db, "users", user.uid, "servicosOcultos"));
-        const ocultosIds = new Set(ocultosSnap.docs.map(doc => doc.id));
-
-        const servicosVisiveis = lista
-          .filter(s => !ocultosIds.has(s.id))
-          .map(s => ({ ...s, tipo: "padrao" }));
-
-        setServicos(servicosVisiveis);
-        setLoading(false);
-      });
+      unsubscribes.push(unsubPersonalizados);
 
       const unsubImportados = fetchServicosImportadosRealtime(user.uid, (importados) => {
-        const importadosMarcados = importados.map(i => ({ ...i, tipo: "importado" }));
-        setServicos(prev => [...importadosMarcados, ...prev.filter(s => s.tipo !== "importado")]);
+        servicosImportadosTemp.length = 0;
+        servicosImportadosTemp.push(...importados);
+        mergeAllServicos();
       });
+      unsubscribes.push(unsubImportados);
 
-      const unsubPersonalizados = fetchServicosPersonalizadosRealtime(user.uid, (personalizados) => {
-        setServicos(prev => {
-          const mapaPersonalizados = new Map(personalizados.map(p => [p.idOriginal, p]));
-          return prev.map(s => mapaPersonalizados.has(s.id) ? { ...s, ...mapaPersonalizados.get(s.id), tipo: "personalizado" } : s);
-        });
+      const servicosCriadosRef = collection(db, "users", user.uid, "servicosCriados");
+      const unsubCriados = onSnapshot(servicosCriadosRef, (snapshot) => {
+        servicosCriadosTemp.length = 0;
+        servicosCriadosTemp.push(...snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        mergeAllServicos();
       });
+      unsubscribes.push(unsubCriados);
 
-      unsubscribes.push(unsubRamo, unsubImportados, unsubPersonalizados);
-    };
-
-    if (ramoSelecionado === "meusServicos") loadMeusServicos();
-    else loadRamoExterno();
+    } else {
+      const unsubRamoExterno = fetchServicosRamoRealtime(ramoSelecionado, (listaExterna) => {
+        const padraoExterno = listaExterna.map(s => ({ ...s, tipo: "padrao" }));
+        setServicos(padraoExterno);
+        setLoading(false);
+      });
+      unsubscribes.push(unsubRamoExterno);
+    }
 
     const unsubFavoritos = fetchFavoritosRealtime(user.uid, setFavoritosIds);
     unsubscribes.push(unsubFavoritos);
 
     return () => unsubscribes.forEach(fn => fn && fn());
   }, [user?.uid, ramoSelecionado, ramoUsuario]);
+
+
 
   const handleDelete = (item) => {
     Alert.alert(
@@ -131,6 +127,7 @@ export default function ServicesScreen({ navigation }) {
               if (item.tipo === "importado") await removerServicoImportado(user.uid, item.id);
               else if (item.tipo === "personalizado") await removerServicoPersonalizado(user.uid, item.id);
               else if (item.tipo === "padrao") await setDoc(doc(db, "users", user.uid, "servicosOcultos", item.id), { ocultoEm: new Date() });
+              else if (item.tipo === "criado") await deleteDoc(doc(db, "users", user.uid, "servicosCriados", item.id));
 
               Toast.show({
                 type: "success",
@@ -155,7 +152,7 @@ export default function ServicesScreen({ navigation }) {
         text1: "Serviço importado com sucesso!",
         text2: `"${item.nome}" foi adicionado aos seus serviços.`,
       });
-      setRamoSelecionado(ramoUsuario);
+      setRamoSelecionado("meusServicos");
     } catch (error) {
       console.error("Erro ao importar serviço:", error);
       Toast.show({ type: "error", text1: "Erro ao importar serviço" });
@@ -171,9 +168,30 @@ export default function ServicesScreen({ navigation }) {
         <Text style={styles.name} numberOfLines={1}>{item.nome}</Text>
         {item.descricao && <Text style={styles.descricao} numberOfLines={2}>{item.descricao}</Text>}
         <View style={styles.labelContainer}>
-          {item.tipo === "padrao" && <View style={[styles.label, { backgroundColor: "#3498db" }]}><Layers size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Padrão</Text></View>}
-          {item.tipo === "importado" && <View style={[styles.label, { backgroundColor: "#27ae60" }]}><Layers size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Importado</Text></View>}
-          {item.tipo === "personalizado" && <View style={[styles.label, { backgroundColor: "#e67e22" }]}><Edit3 size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Personalizado</Text></View>}
+          {item.tipo === "padrao" && (
+            <View style={[styles.label, { backgroundColor: "#3498db" }]}>
+              <Layers size={14} color="#fff" style={{ marginRight: 4 }} />
+              <Text style={styles.labelText}>Padrão</Text>
+            </View>
+          )}
+          {item.tipo === "importado" && (
+            <View style={[styles.label, { backgroundColor: "#27ae60" }]}>
+              <Download size={14} color="#fff" style={{ marginRight: 4 }} />
+              <Text style={styles.labelText}>Importado</Text>
+            </View>
+          )}
+          {item.tipo === "personalizado" && (
+            <View style={[styles.label, { backgroundColor: "#e67e22" }]}>
+              <Edit3 size={14} color="#fff" style={{ marginRight: 4 }} />
+              <Text style={styles.labelText}>Personalizado</Text>
+            </View>
+          )}
+          {item.tipo === "criado" && (
+            <View style={[styles.label, { backgroundColor: "#8e44ad" }]}>
+              <User size={14} color="#fff" style={{ marginRight: 4 }} />
+              <Text style={styles.labelText}>Criado</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -181,10 +199,12 @@ export default function ServicesScreen({ navigation }) {
         {ramoSelecionado === "meusServicos" ? (
           <>
             <TouchableOpacity onPress={() => toggleFavorito(user.uid, item, favoritosIds.has(item.id))} style={{ marginRight: 12 }}>
-              {favoritosIds.has(item.id) ? <Star size={22} color="#f1c40f" /> : <StarOff size={22} color="#888" />}
+              {favoritosIds.has(item.id) ? <Star size={23} color="#f1c40f" /> : <StarOff size={22} color="#888" />}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleDelete(item)}>
-              {item.tipo === "importado" ? <Text style={{ color: "red", fontWeight: "600" }}>Remover</Text> : <Trash2 size={22} color="red" />}
+             
+                <Trash2 size={23} color="red" />
+             
             </TouchableOpacity>
           </>
         ) : (
@@ -231,7 +251,7 @@ export default function ServicesScreen({ navigation }) {
       />
 
       {ramoSelecionado === "meusServicos" && (
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("CreateServiceScreen")}>
+        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("CerateServiceScreen")}>
           <Plus size={28} color="#fff" />
         </TouchableOpacity>
       )}

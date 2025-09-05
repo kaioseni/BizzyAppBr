@@ -32,7 +32,6 @@ export const fetchServicosPersonalizadosRealtime = (uid, callback) => {
   });
 };
 
-
 export const fetchFavoritosRealtime = (userId, callback) => {
   const ref = collection(db, "users", userId, "favoritos");
   return onSnapshot(ref, (snapshot) => {
@@ -62,15 +61,16 @@ export async function toggleFavorito(userId, servico, isFavorito) {
 }
 
 export const deleteServico = async (userId, ramoUsuario, item) => {
-  const servicoRef = doc(
-    db,
-    "ramosDeAtividade",
-    ramoUsuario,
-    "ServicosComuns",
-    item.id
-  );
-  await deleteDoc(servicoRef);
+  if (item.tipo === "padrao") {
+     
+    await ocultarServicoPadraoParaUsuario(userId, item.id);
+  } else if (item.tipo === "importado") {
+    await removerServicoImportado(userId, item.id);
+  } else if (item.tipo === "personalizado") {
+    await removerServicoPersonalizado(userId, item.id);
+  }
 
+  
   const favRef = doc(db, "users", userId, "favoritos", item.id);
   await deleteDoc(favRef);
 };
