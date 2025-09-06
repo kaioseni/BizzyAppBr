@@ -4,8 +4,10 @@ import { AuthContext } from "../contexts/AuthContext";
 import { Plus, Star, StarOff, Trash2, Edit3, Layers, User, Download } from "lucide-react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import Toast from "react-native-toast-message";
-import { fetchServicosRamoRealtime, fetchServicosImportadosRealtime, fetchServicosPersonalizadosRealtime, fetchFavoritosRealtime, toggleFavorito, importarServicoUsuario, removerServicoImportado, removerServicoPersonalizado,
-  fetchRamos, fetchRamoUsuario } from "../services/servicesService";
+import {
+  fetchServicosRamoRealtime, fetchServicosImportadosRealtime, fetchServicosPersonalizadosRealtime, fetchFavoritosRealtime, toggleFavorito, importarServicoUsuario, removerServicoImportado, removerServicoPersonalizado,
+  fetchRamos, fetchRamoUsuario
+} from "../services/servicesService";
 import { db } from "../firebase/firebaseConfig";
 import { collection, getDocs, doc, setDoc, onSnapshot, deleteDoc } from "firebase/firestore";
 
@@ -35,7 +37,7 @@ export default function ServicesScreen({ navigation }) {
 
       const ramo = await fetchRamoUsuario(user.uid);
       setRamoUsuario(ramo);
-      setRamoSelecionado("meusServicos"); 
+      setRamoSelecionado("meusServicos");
     };
 
     init();
@@ -202,14 +204,17 @@ export default function ServicesScreen({ navigation }) {
               {favoritosIds.has(item.id) ? <Star size={23} color="#f1c40f" /> : <StarOff size={22} color="#888" />}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleDelete(item)}>
-             
-                <Trash2 size={23} color="red" />
-             
+
+              <Trash2 size={23} color="red" />
+
             </TouchableOpacity>
           </>
         ) : (
           <TouchableOpacity onPress={() => handleImportar(item)}>
-            <Text style={{ color: "#27ae60", fontWeight: "600" }}>Importar</Text>
+            <View style={{ alignItems: "center" }}>
+              <Text style={{ color: "#27ae60", fontWeight: "600" }}>Importar</Text>
+              <Download size={23} color={"#27ae60"} />
+            </View>
           </TouchableOpacity>
         )}
       </View>
