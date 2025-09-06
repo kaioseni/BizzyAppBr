@@ -47,20 +47,22 @@ export default function CerateServiceScreen({ navigation }) {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Nome do Serviço</Text>
+
+            <Text style={styles.title}>Novo Serviço</Text>
+
             <TextInput
                 style={styles.input}
+                placeholder="Nome do Serviço"
                 value={nome}
                 onChangeText={setNome}
-                placeholder="Ex: Troca de óleo"
             />
 
-            <Text style={styles.label}>Descrição</Text>
             <TextInput
                 style={styles.input}
                 value={descricao}
                 onChangeText={setDescricao}
-                placeholder="Ex: Troca completa com filtro"
+                placeholder="Descrição do Serviço"
+                multiline={true}
             />
 
             <TouchableOpacity style={styles.btn} onPress={handleSave}>
@@ -76,9 +78,12 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: "#fff"
     },
-    label: {
-        fontSize: 16,
-        marginBottom: 8
+    title: {
+        fontSize: 20,
+        fontWeight: "bold",
+        marginBottom: 20,
+        textAlign: "center",
+        color: "#329de4",
     },
     input: {
         borderWidth: 1,

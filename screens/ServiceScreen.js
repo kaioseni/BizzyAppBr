@@ -256,7 +256,7 @@ export default function ServicesScreen({ navigation }) {
       />
 
       {ramoSelecionado === "meusServicos" && (
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("CerateServiceScreen")}>
+        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("CreateServiceScreen")}>
           <Plus size={28} color="#fff" />
         </TouchableOpacity>
       )}

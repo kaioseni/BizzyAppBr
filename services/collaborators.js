@@ -2,7 +2,7 @@ import { db, storage } from "../firebase/firebaseConfig";
 import { doc, setDoc, getDocs, collection, query, where, deleteDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-export async function createCollaborator({ nome, fotoUri, idEstabelecimento }) {
+export async function createCollaborator({ nome, fotoUri, idEstabelecimento, preferenciasSelecionadas }) {
   if (!nome || !nome.trim()) throw new Error("Nome do colaborador é obrigatório");
   if (!idEstabelecimento) throw new Error("ID do estabelecimento não definido");
 
@@ -22,6 +22,7 @@ export async function createCollaborator({ nome, fotoUri, idEstabelecimento }) {
     nome: nome.trim(),
     foto: fotoUrl || null,
     idEstabelecimento: idEstabelecimento,
+    preferenciasServicos: preferenciasSelecionadas,
     createdAt: new Date(),
   });
 }
