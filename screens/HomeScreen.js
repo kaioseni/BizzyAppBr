@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AuthContext } from "../contexts/AuthContext";
 import { db } from "../firebase/firebaseConfig";
-import { collection, query, where, orderBy, Timestamp, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, Timestamp, onSnapshot, getDoc, getDocs, doc } from "firebase/firestore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -17,6 +17,93 @@ export default function HomeScreen() {
   const [agendamentos, setAgendamentos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [showPicker, setShowPicker] = useState(false);
+
+  const [servicos, setServicos] = useState([]);
+  const [favoritosServicos, setFavoritosServicos] = useState(new Set());
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const unsubscribes = [];
+
+    const temp = {
+      padrao: [],
+      importados: [],
+      personalizados: [],
+      criados: [],
+      favoritos: new Set(),
+    };
+
+    const mergeServicos = () => {
+      let all = [
+        ...temp.personalizados.map(s => ({ ...s, tipo: "personalizado" })),
+        ...temp.importados.map(s => ({ ...s, tipo: "importado" })),
+        ...temp.criados.map(s => ({ ...s, tipo: "criado" })),
+        ...temp.padrao.map(s => ({ ...s, tipo: "padrao" })),
+      ];
+
+      temp.favoritos.forEach(favId => {
+        if (!all.some(s => s.id === favId)) {
+          all.push({ id: favId, nome: favId, descricao: "(Favorito)", tipo: "favorito" });
+        }
+      });
+
+      all.sort((a, b) => {
+        const aFav = temp.favoritos.has(a.id);
+        const bFav = temp.favoritos.has(b.id);
+        return aFav === bFav ? 0 : aFav ? -1 : 1;
+      });
+
+      setServicos(all);
+      setFavoritosServicos(temp.favoritos);
+    };
+
+    const init = async () => {
+      try {
+        const estSnap = await getDoc(doc(db, "estabelecimentos", user.uid));
+        if (!estSnap.exists()) return;
+        const { ramoAtividade } = estSnap.data();
+        if (!ramoAtividade) return;
+
+        const padraoSnap = await getDocs(collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns"));
+        temp.padrao = padraoSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        mergeServicos();
+
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "servicosPersonalizados"), snap => {
+            temp.personalizados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            mergeServicos();
+          })
+        );
+
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "servicosImportados"), snap => {
+            temp.importados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            mergeServicos();
+          })
+        );
+
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "servicosCriados"), snap => {
+            temp.criados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            mergeServicos();
+          })
+        );
+
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "favoritos"), snap => {
+            temp.favoritos = new Set(snap.docs.map(d => d.id));
+            mergeServicos();
+          })
+        );
+      } catch (err) {
+        console.error("Erro ao carregar serviços:", err);
+      }
+    };
+
+    init();
+    return () => unsubscribes.forEach(u => u && u());
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -32,13 +119,18 @@ export default function HomeScreen() {
       orderBy("dataHora", "asc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, snapshot => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAgendamentos(data);
     });
 
     return () => unsubscribe();
-  }, [user, selectedDate]);
+  }, [user, selectedDate, servicos]);
+
+  const getNomeServico = (id) => {
+    const s = servicos.find(s => s.id === id);
+    return s ? `${favoritosServicos.has(id) ? "⭐ " : ""}${s.nome}` : id;
+  };
 
   const handleDateChange = (event, date) => {
     setShowPicker(false);
@@ -54,7 +146,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-
       <TouchableOpacity
         style={styles.dateButton}
         onPress={() => setShowPicker(true)}
@@ -76,17 +167,13 @@ export default function HomeScreen() {
 
       <FlatList
         data={agendamentos}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={{ paddingBottom: 20 }}
         renderItem={({ item }) => {
           const atrasado = isLate(item.dataHora);
-
           return (
             <View
-              style={[
-                styles.card,
-                atrasado && { borderColor: "red", backgroundColor: "#ffe6e6" }
-              ]}
+              style={[styles.card, atrasado && { borderColor: "red", backgroundColor: "#ffe6e6" }]}
             >
               <View style={styles.cardHeader}>
                 <Text style={[styles.time, atrasado && { color: "red" }]}>
@@ -98,13 +185,15 @@ export default function HomeScreen() {
               </View>
 
               {item.servico && (
-                <Text style={styles.servico}>Serviço: {item.servico}</Text>
+                <Text style={styles.servico}>
+                  Serviço: {getNomeServico(item.servico)}
+                </Text>
               )}
 
               {item.colaborador && (
                 <View style={styles.colaboradorWrapper}>
                   <User size={14} color="#329de4" style={{ marginRight: 6 }} />
-                  <Text style={styles.colaborador}>Profissional: {item.colaborador}</Text>
+                  <Text style={styles.colaborador}>{item.colaborador}</Text>
                 </View>
               )}
 
@@ -115,9 +204,7 @@ export default function HomeScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              Nenhum agendamento para este dia
-            </Text>
+            <Text style={styles.emptyText}>Nenhum agendamento para este dia</Text>
           </View>
         }
       />
@@ -148,12 +235,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     alignSelf: "center",
-    marginBottom: 12,
+    marginBottom: 12
   },
   dateButtonText: {
     color: "#fff",
     fontSize: width * 0.042,
-    fontWeight: "600",
+    fontWeight: "600"
   },
   loadingText: {
     flex: 1,
@@ -195,7 +282,7 @@ const styles = StyleSheet.create({
     shadowColor: "#329de4",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowRadius: 6
   },
   card: {
     backgroundColor: "#fff",
@@ -207,7 +294,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "#329de4",
+    borderColor: "#329de4"
   },
   cardHeader: {
     flexDirection: "row",
@@ -223,7 +310,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: width * 0.042
   },
-  separator: { height: 8 },
+  separator: {
+    height: 8
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",

@@ -3,11 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from "r
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaskedTextInput } from "react-native-mask-text";
 import { Picker } from "@react-native-picker/picker";
-import { createAgendamento } from "../services/appointments";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../contexts/AuthContext";
 import { db } from "../firebase/firebaseConfig";
 import { doc, getDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
+import { createAgendamento } from "../services/appointments";
 
 export default function AppointmentsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -15,8 +15,6 @@ export default function AppointmentsScreen({ navigation }) {
   const [nomeCliente, setNomeCliente] = useState("");
   const [telefone, setTelefone] = useState("");
   const [dataHora, setDataHora] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const [servicos, setServicos] = useState([]);
   const [servicoSelecionado, setServicoSelecionado] = useState("");
@@ -24,47 +22,94 @@ export default function AppointmentsScreen({ navigation }) {
   const [colaboradores, setColaboradores] = useState([]);
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState("");
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
   const [favoritosIds, setFavoritosIds] = useState(new Set());
 
   useEffect(() => {
     if (!user?.uid) return;
 
-    const fetchServicos = async () => {
-      try {
-        const estRef = doc(db, "estabelecimentos", user.uid);
-        const estSnap = await getDoc(estRef);
-        if (!estSnap.exists()) return;
+    const unsubscribes = [];
+    const temp = {
+      padrao: [],
+      importados: [],
+      personalizados: [],
+      criados: [],
+      favoritos: new Set(),
+    };
 
+    const mergeServicos = () => {
+      let all = [
+        ...temp.personalizados.map(s => ({ ...s, tipo: "personalizado" })),
+        ...temp.importados.map(s => ({ ...s, tipo: "importado" })),
+        ...temp.criados.map(s => ({ ...s, tipo: "criado" })),
+        ...temp.padrao.map(s => ({ ...s, tipo: "padrao" })),
+      ];
+
+      temp.favoritos.forEach(favId => {
+        if (!all.some(s => s.id === favId)) {
+          all.push({ id: favId, nome: favId, descricao: "(Favorito)", tipo: "favorito" });
+        }
+      });
+
+      all.sort((a, b) => {
+        const aFav = temp.favoritos.has(a.id);
+        const bFav = temp.favoritos.has(b.id);
+        return aFav === bFav ? 0 : aFav ? -1 : 1;
+      });
+
+      setServicos(all);
+    };
+
+    const init = async () => {
+      try {
+        const estSnap = await getDoc(doc(db, "estabelecimentos", user.uid));
+        if (!estSnap.exists()) return;
         const { ramoAtividade } = estSnap.data();
         if (!ramoAtividade) return;
 
-        const servicosRef = collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns");
-        const servicosSnap = await getDocs(servicosRef);
+        const padraoSnap = await getDocs(collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns"));
+        temp.padrao = padraoSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        mergeServicos();
 
-        const listaServicos = servicosSnap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "servicosPersonalizados"), snap => {
+            temp.personalizados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            mergeServicos();
+          })
+        );
 
-        const favRef = collection(db, "users", user.uid, "favoritos");
-        const unsubscribeFav = onSnapshot(favRef, (snapshot) => {
-          const favIdsSet = new Set(snapshot.docs.map((doc) => doc.id));
-          setFavoritosIds(favIdsSet);
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "servicosImportados"), snap => {
+            temp.importados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            mergeServicos();
+          })
+        );
 
-          const sorted = [...listaServicos].sort((a, b) => {
-            const aFav = favIdsSet.has(a.id);
-            const bFav = favIdsSet.has(b.id);
-            return aFav === bFav ? 0 : aFav ? -1 : 1;
-          });
-          setServicos(sorted);
-        });
-      } catch (error) {
-        console.error("Erro ao buscar serviços/favoritos:", error);
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "servicosCriados"), snap => {
+            temp.criados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            mergeServicos();
+          })
+        );
+
+        unsubscribes.push(
+          onSnapshot(collection(db, "users", user.uid, "favoritos"), snap => {
+            temp.favoritos = new Set(snap.docs.map(d => d.id));
+            setFavoritosIds(temp.favoritos);
+            mergeServicos();
+          })
+        );
+      } catch (err) {
+        console.error("Erro ao carregar serviços:", err);
         Toast.show({ type: "error", text1: "Erro ao carregar serviços" });
       }
     };
 
-    fetchServicos();
+    init();
+
+    return () => unsubscribes.forEach(u => u && u());
   }, [user?.uid]);
 
   useEffect(() => {
@@ -72,23 +117,32 @@ export default function AppointmentsScreen({ navigation }) {
 
     const fetchColaboradores = async () => {
       try {
-        const colRef = collection(db, "colaboradores");
-        const colSnap = await getDocs(colRef);
-        const listaColaboradores = colSnap.docs
+        const colSnap = await getDocs(collection(db, "colaboradores"));
+        const lista = colSnap.docs
           .filter(doc => doc.data().idEstabelecimento === user.uid)
           .map(doc => ({
             id: doc.id,
             nome: doc.data().nome,
+            preferenciasServicos: doc.data().preferenciasServicos || [],
           }));
-        setColaboradores(listaColaboradores);
-      } catch (error) {
-        console.error("Erro ao buscar colaboradores:", error);
+
+        if (servicoSelecionado) {
+          lista.sort((a, b) => {
+            const aPref = a.preferenciasServicos.some(s => s.id === servicoSelecionado);
+            const bPref = b.preferenciasServicos.some(s => s.id === servicoSelecionado);
+            return aPref === bPref ? 0 : aPref ? -1 : 1;
+          });
+        }
+
+        setColaboradores(lista);
+      } catch (err) {
+        console.error("Erro ao carregar colaboradores:", err);
         Toast.show({ type: "error", text1: "Erro ao carregar colaboradores" });
       }
     };
 
     fetchColaboradores();
-  }, [user?.uid]);
+  }, [user?.uid, servicoSelecionado]);
 
   const validarCampos = () => {
     if (!nomeCliente.trim()) {
@@ -117,7 +171,6 @@ export default function AppointmentsScreen({ navigation }) {
       newDate.setHours(dataHora.getHours());
       newDate.setMinutes(dataHora.getMinutes());
       setDataHora(newDate);
-
       if (Platform.OS === "android") setShowTimePicker(true);
     }
   };
@@ -134,6 +187,7 @@ export default function AppointmentsScreen({ navigation }) {
 
   const handleAgendar = async () => {
     if (!validarCampos()) return;
+
     try {
       await createAgendamento({
         userAux: user.uid,
@@ -143,6 +197,7 @@ export default function AppointmentsScreen({ navigation }) {
         servico: servicoSelecionado,
         colaborador: colaboradorSelecionado,
       });
+
       Toast.show({ type: "success", text1: "Agendamento cadastrado com sucesso!" });
 
       setNomeCliente("");
@@ -150,10 +205,9 @@ export default function AppointmentsScreen({ navigation }) {
       setDataHora(new Date());
       setServicoSelecionado("");
       setColaboradorSelecionado("");
-
       navigation.goBack();
-    } catch (error) {
-      Toast.show({ type: "error", text1: "Erro ao cadastrar agendamento", text2: error.message });
+    } catch (err) {
+      Toast.show({ type: "error", text1: "Erro ao cadastrar agendamento", text2: err.message });
     }
   };
 
@@ -180,13 +234,13 @@ export default function AppointmentsScreen({ navigation }) {
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={servicoSelecionado}
-          onValueChange={(itemValue) => setServicoSelecionado(itemValue)}
+          onValueChange={setServicoSelecionado}
         >
           <Picker.Item label="Selecione um serviço" value="" enabled={false} />
-          {servicos.map((s) => (
+          {servicos.map(s => (
             <Picker.Item
-              key={s.id}
-              label={s.nome + (favoritosIds.has(s.id) ? " ⭐" : "")}
+              key={`${s.id}-${s.tipo}`}
+              label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`}
               value={s.id}
             />
           ))}
@@ -196,11 +250,15 @@ export default function AppointmentsScreen({ navigation }) {
       <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={colaboradorSelecionado}
-          onValueChange={(itemValue) => setColaboradorSelecionado(itemValue)}
+          onValueChange={setColaboradorSelecionado}
         >
           <Picker.Item label="Selecione um colaborador (opcional)" value="" />
-          {colaboradores.map((c) => (
-            <Picker.Item key={c.id} label={c.nome} value={c.nome} />
+          {colaboradores.map(c => (
+            <Picker.Item
+              key={c.id}
+              label={c.nome}
+              value={c.nome}
+            />
           ))}
         </Picker>
       </View>
@@ -212,7 +270,6 @@ export default function AppointmentsScreen({ navigation }) {
       {showDatePicker && (
         <DateTimePicker value={dataHora} mode="date" display="default" onChange={onDateChange} />
       )}
-
       {showTimePicker && (
         <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={onTimeChange} />
       )}
@@ -253,7 +310,8 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: "#329de4",
-    padding: 15, borderRadius: 8,
+    padding: 15,
+    borderRadius: 8,
     alignItems: "center",
     marginTop: 10
   },
