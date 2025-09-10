@@ -172,7 +172,8 @@ export default function HomeScreen() {
         renderItem={({ item }) => {
           const atrasado = isLate(item.dataHora);
           return (
-            <View
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ManageService", { agendamento: item })}
               style={[styles.card, atrasado && { borderColor: "red", backgroundColor: "#ffe6e6" }]}
             >
               <View style={styles.cardHeader}>
@@ -198,9 +199,10 @@ export default function HomeScreen() {
               )}
 
               <Text style={styles.phone}>{item.telefone}</Text>
-            </View>
+            </TouchableOpacity>
           );
         }}
+
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

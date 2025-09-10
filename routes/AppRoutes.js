@@ -14,6 +14,7 @@ import ClientsScreen from "../screens/ClientsScreen";
 import ServiceScreen from "../screens/ServiceScreen";
 import CreateServiceScreen from "../screens/CreateServiceScreen";
 import EditServiceScreen from "../screens/EditServiceScreen";
+import ManageServiceScreen from "../screens/ManageServiceScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -37,6 +38,7 @@ export default function AppRoutes({ viewOnboarding }) {
       <Stack.Screen name="ServicesScreen" component={ServiceScreen} options={{ title: "Tipos de Serviços" }} />
       <Stack.Screen name="CreateServiceScreen" component={CreateServiceScreen} options={{ title: "Novo Tipo de Serviço" }} />
       <Stack.Screen name="EditServiceScreen" component={EditServiceScreen} options={{ title: "Editar Serviço" }} />
+      <Stack.Screen name="ManageService" component={ManageServiceScreen} options={{ title: "Editar Agendamento" }} />
 
     </Stack.Navigator>
   );
