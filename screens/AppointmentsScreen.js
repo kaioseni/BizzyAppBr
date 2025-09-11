@@ -5,12 +5,18 @@ import { MaskedTextInput } from "react-native-mask-text";
 import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 import { db } from "../firebase/firebaseConfig";
 import { doc, getDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { createAgendamento } from "../services/appointments";
+import { lightTheme, darkTheme } from "../utils/themes";
+
+const APP_BLUE = "#329de4";
 
 export default function AppointmentsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+  const currentTheme = theme === "dark" ? darkTheme : lightTheme;
 
   const [nomeCliente, setNomeCliente] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -31,13 +37,7 @@ export default function AppointmentsScreen({ navigation }) {
     if (!user?.uid) return;
 
     const unsubscribes = [];
-    const temp = {
-      padrao: [],
-      importados: [],
-      personalizados: [],
-      criados: [],
-      favoritos: new Set(),
-    };
+    const temp = { padrao: [], importados: [], personalizados: [], criados: [], favoritos: new Set() };
 
     const mergeServicos = () => {
       let all = [
@@ -79,21 +79,18 @@ export default function AppointmentsScreen({ navigation }) {
             mergeServicos();
           })
         );
-
         unsubscribes.push(
           onSnapshot(collection(db, "users", user.uid, "servicosImportados"), snap => {
             temp.importados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             mergeServicos();
           })
         );
-
         unsubscribes.push(
           onSnapshot(collection(db, "users", user.uid, "servicosCriados"), snap => {
             temp.criados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             mergeServicos();
           })
         );
-
         unsubscribes.push(
           onSnapshot(collection(db, "users", user.uid, "favoritos"), snap => {
             temp.favoritos = new Set(snap.docs.map(d => d.id));
@@ -108,7 +105,6 @@ export default function AppointmentsScreen({ navigation }) {
     };
 
     init();
-
     return () => unsubscribes.forEach(u => u && u());
   }, [user?.uid]);
 
@@ -145,22 +141,10 @@ export default function AppointmentsScreen({ navigation }) {
   }, [user?.uid, servicoSelecionado]);
 
   const validarCampos = () => {
-    if (!nomeCliente.trim()) {
-      Toast.show({ type: "error", text1: "Preencha o nome do cliente." });
-      return false;
-    }
-    if (!telefone.trim() || telefone.replace(/\D/g, "").length < 11) {
-      Toast.show({ type: "error", text1: "Telefone inválido." });
-      return false;
-    }
-    if (!dataHora || dataHora < new Date()) {
-      Toast.show({ type: "error", text1: "Data e hora inválidas." });
-      return false;
-    }
-    if (!servicoSelecionado) {
-      Toast.show({ type: "error", text1: "Selecione um serviço." });
-      return false;
-    }
+    if (!nomeCliente.trim()) { Toast.show({ type: "error", text1: "Preencha o nome do cliente." }); return false; }
+    if (!telefone.trim() || telefone.replace(/\D/g, "").length < 11) { Toast.show({ type: "error", text1: "Telefone inválido." }); return false; }
+    if (!dataHora || dataHora < new Date()) { Toast.show({ type: "error", text1: "Data e hora inválidas." }); return false; }
+    if (!servicoSelecionado) { Toast.show({ type: "error", text1: "Selecione um serviço." }); return false; }
     return true;
   };
 
@@ -212,69 +196,60 @@ export default function AppointmentsScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Novo Agendamento</Text>
-
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <TextInput
         placeholder="Nome do cliente"
+        placeholderTextColor={currentTheme.textSecondary || "#777"}
         value={nomeCliente}
         onChangeText={setNomeCliente}
-        style={styles.input}
+        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: currentTheme.border || "#ccc" }]}
       />
 
       <MaskedTextInput
         mask="55 (99) 9 9999-9999"
         keyboardType="phone-pad"
         placeholder="Telefone do cliente"
+        placeholderTextColor={currentTheme.textSecondary || "#777"}
         value={telefone}
         onChangeText={setTelefone}
-        style={styles.input}
+        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: currentTheme.border || "#ccc" }]}
       />
 
-      <View style={styles.pickerWrapper}>
+      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: currentTheme.border || "#ccc" }]}>
         <Picker
           selectedValue={servicoSelecionado}
           onValueChange={setServicoSelecionado}
+          dropdownIconColor={currentTheme.text}
+          style={{ color: servicoSelecionado ? currentTheme.text : currentTheme.textSecondary || "#777" }}
         >
-          <Picker.Item label="Selecione um serviço" value="" enabled={false} />
+          <Picker.Item label="Selecione um serviço" value="" enabled={false} color={currentTheme.textSecondary || "#777"} />
           {servicos.map(s => (
-            <Picker.Item
-              key={`${s.id}-${s.tipo}`}
-              label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`}
-              value={s.id}
-            />
+            <Picker.Item key={`${s.id}-${s.tipo}`} label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`} value={s.id} color={currentTheme.text} />
           ))}
         </Picker>
       </View>
 
-      <View style={styles.pickerWrapper}>
+      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: currentTheme.border || "#ccc" }]}>
         <Picker
           selectedValue={colaboradorSelecionado}
           onValueChange={setColaboradorSelecionado}
+          dropdownIconColor={currentTheme.text}
+          style={{ color: colaboradorSelecionado ? currentTheme.text : currentTheme.textSecondary || "#777" }}
         >
-          <Picker.Item label="Selecione um colaborador (opcional)" value="" />
+          <Picker.Item label="Selecione um colaborador (opcional)" value="" color={currentTheme.textSecondary || "#777"} />
           {colaboradores.map(c => (
-            <Picker.Item
-              key={c.id}
-              label={c.nome}
-              value={c.nome}
-            />
+            <Picker.Item key={c.id} label={c.nome} value={c.nome} color={currentTheme.text} />
           ))}
         </Picker>
       </View>
 
-      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.input}>
-        <Text>{dataHora.toLocaleString()}</Text>
+      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, { backgroundColor: currentTheme.card, borderColor: currentTheme.border || "#ccc" }]}>
+        <Text style={{ color: currentTheme.text }}>{dataHora.toLocaleString()}</Text>
       </TouchableOpacity>
+      {showDatePicker && <DateTimePicker value={dataHora} mode="date" display="default" onChange={onDateChange} />}
+      {showTimePicker && <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={onTimeChange} />}
 
-      {showDatePicker && (
-        <DateTimePicker value={dataHora} mode="date" display="default" onChange={onDateChange} />
-      )}
-      {showTimePicker && (
-        <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={onTimeChange} />
-      )}
-
-      <TouchableOpacity style={styles.btn} onPress={handleAgendar}>
+      <TouchableOpacity style={[styles.btn, { backgroundColor: APP_BLUE }]} onPress={handleAgendar}>
         <Text style={styles.btnText}>Salvar Agendamento</Text>
       </TouchableOpacity>
     </View>
@@ -285,31 +260,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
     justifyContent: "center"
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#329de4",
-    textAlign: "center"
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
     borderRadius: 8,
+    padding: 12,
     marginBottom: 15
   },
   pickerWrapper: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     marginBottom: 15
   },
   btn: {
-    backgroundColor: "#329de4",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",

@@ -9,6 +9,7 @@ const { width } = Dimensions.get("window");
 
 export default function ClientsScreen() {
   const { user } = useContext(AuthContext);
+
   const [agendamentos, setAgendamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [search, setSearch] = useState("");
@@ -30,21 +31,11 @@ export default function ClientsScreen() {
 
       const uniqueClientsMap = {};
       data.forEach((a) => {
+        const dataHora = a.dataHora instanceof Timestamp ? a.dataHora.toDate() : new Date(a.dataHora);
         if (!uniqueClientsMap[a.nomeCliente]) {
-          uniqueClientsMap[a.nomeCliente] = {
-            nomeCliente: a.nomeCliente,
-            telefone: a.telefone,
-            dataHora: a.dataHora,
-          };
-        } else {
-          const existing = uniqueClientsMap[a.nomeCliente];
-          if (a.dataHora.toDate() > existing.dataHora.toDate()) {
-            uniqueClientsMap[a.nomeCliente] = {
-              nomeCliente: a.nomeCliente,
-              telefone: a.telefone,
-              dataHora: a.dataHora,
-            };
-          }
+          uniqueClientsMap[a.nomeCliente] = { nomeCliente: a.nomeCliente, telefone: a.telefone, dataHora };
+        } else if (dataHora > uniqueClientsMap[a.nomeCliente].dataHora) {
+          uniqueClientsMap[a.nomeCliente] = { nomeCliente: a.nomeCliente, telefone: a.telefone, dataHora };
         }
       });
 
@@ -61,8 +52,7 @@ export default function ClientsScreen() {
     const nomeMatch = c.nomeCliente.toLowerCase().includes(search.trim().toLowerCase());
     let dateMatch = true;
     if (dateRange.start && dateRange.end) {
-      const dataAtendimento =
-        c.dataHora instanceof Timestamp ? c.dataHora.toDate() : new Date(c.dataHora);
+      const dataAtendimento = c.dataHora instanceof Date ? c.dataHora : new Date(c.dataHora);
       dateMatch = dataAtendimento >= dateRange.start && dataAtendimento <= dateRange.end;
     }
     return nomeMatch && dateMatch;
@@ -72,13 +62,13 @@ export default function ClientsScreen() {
     setShowDatePicker(false);
     if (!selectedDate) return;
 
+    const date = new Date(selectedDate);
     if (dateMode === "start") {
-      setDateRange({ ...dateRange, start: selectedDate });
-      setDateMode("end");
-      setShowDatePicker(true);
+      date.setHours(0, 0, 0, 0);
+      setDateRange({ ...dateRange, start: date });
     } else {
-      setDateRange({ ...dateRange, end: selectedDate });
-      setDateMode("start");
+      date.setHours(23, 59, 59, 999);
+      setDateRange({ ...dateRange, end: date });
     }
   };
 
@@ -90,7 +80,7 @@ export default function ClientsScreen() {
   return (
     <View style={styles.container}>
 
-      <View style={styles.filterRow}>
+      <View style={styles.filtersContainer}>
         <TouchableOpacity
           style={styles.filterButton}
           onPress={() => {
@@ -98,20 +88,30 @@ export default function ClientsScreen() {
             setShowDatePicker(true);
           }}
         >
-          <Text style={styles.filterText}>Filtrar por período</Text>
+          <Text style={styles.filterText}>
+            {dateRange.start ? dateRange.start.toLocaleDateString("pt-BR") : "Data Início"}
+          </Text>
         </TouchableOpacity>
 
-        {dateRange.start && dateRange.end && (
-          <View style={styles.rangeContainer}>
-            <Text style={styles.rangeText}>
-              {dateRange.start.toLocaleDateString()} → {dateRange.end.toLocaleDateString()}
-            </Text>
-            <TouchableOpacity onPress={clearFilters}>
-              <Text style={styles.clearText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => {
+            setDateMode("end");
+            setShowDatePicker(true);
+          }}
+        >
+          <Text style={styles.filterText}>
+            {dateRange.end ? dateRange.end.toLocaleDateString("pt-BR") : "Data Fim"}
+          </Text>
+        </TouchableOpacity>
+
+        {(dateRange.start || dateRange.end) && (
+          <TouchableOpacity style={{ marginLeft: 8 }} onPress={clearFilters}>
+            <Text style={styles.clearText}>✕</Text>
+          </TouchableOpacity>
         )}
       </View>
+
       <TextInput
         style={styles.input}
         placeholder="Buscar cliente pelo nome..."
@@ -123,13 +123,20 @@ export default function ClientsScreen() {
         data={filteredClients}
         keyExtractor={(item) => item.nomeCliente + item.telefone}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.nome}>{item.nomeCliente}</Text>
-            <Text style={styles.telefone}>{item.telefone}</Text>
+          <View style={styles.clientCard}>
+            <View style={styles.clientHeader}>
+              <Text style={styles.clientName}>{item.nomeCliente}</Text>
+              <Text style={styles.clientDate}>
+                {item.dataHora.toLocaleDateString("pt-BR")}
+              </Text>
+            </View>
+            <Text style={styles.clientPhone}>{item.telefone}</Text>
           </View>
         )}
         ListEmptyComponent={
-          <Text style={{ textAlign: "center", marginTop: 20 }}>Nenhum cliente encontrado</Text>
+          <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
+            Nenhum cliente encontrado
+          </Text>
         }
       />
 
@@ -149,7 +156,31 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: width * 0.04,
-    backgroundColor: "#f2f5f7"
+    backgroundColor: "#f2f5f7",
+  },
+  filtersContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 8,
+  },
+  filterButton: {
+    backgroundColor: "#329de4",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  clearText: {
+    color: "#e74c3c",
+    fontWeight: "bold",
+    fontSize: 18,
   },
   input: {
     borderWidth: 1,
@@ -159,40 +190,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: width * 0.04,
     backgroundColor: "#fff",
-  },
-  filterRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: 'center',
-    marginBottom: 12
-  },
-  filterButton: {
-    backgroundColor: "#329de4",
-    padding: 10,
-    borderRadius: 8
-  },
-  filterText: {
-    color: "#fff",
-    fontWeight: "600"
-  },
-  rangeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 10,
-    backgroundColor: "#dbefff",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  rangeText: {
-    color: "#329de4",
-    fontWeight: "600",
-    marginRight: 6
-  },
-  clearText: {
-    color: "#e74c3c",
-    fontWeight: "bold",
-    fontSize: 16
   },
   card: {
     backgroundColor: "#fff",
@@ -208,10 +205,42 @@ const styles = StyleSheet.create({
   nome: {
     fontSize: width * 0.045,
     fontWeight: "600",
-    marginBottom: 4
+    marginBottom: 4,
   },
   telefone: {
     fontSize: width * 0.04,
-    color: "#555"
+    color: "#555",
   },
+  clientCard: {
+    backgroundColor: "#e6f0fa",
+    borderLeftWidth: 5,
+    borderLeftColor: "#329de4",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  clientHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  clientName: {
+    fontSize: width * 0.045,
+    fontWeight: "700",
+    color: "#329de4",
+  },
+  clientDate: {
+    fontSize: width * 0.035,
+    color: "#555",
+  },
+  clientPhone: {
+    fontSize: width * 0.04,
+    color: "#333",
+  },
+
 });

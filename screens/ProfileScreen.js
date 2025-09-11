@@ -1,13 +1,20 @@
 import { useState, useEffect, useContext } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Image, Dimensions, ScrollView } from "react-native";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 import { db } from "../firebase/firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 const { width } = Dimensions.get("window");
+const APP_BLUE = "#329de4";
 
 export default function ProfileScreen() {
   const { user } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+  const currentTheme = theme === "dark"
+    ? { background: "#121212", card: "#1e1e1e", text: "#fff", textSecondary: "#ccc" }
+    : { background: "#fff", card: "#f9f9f9", text: "#333", textSecondary: "#555" };
+
   const [estabelecimento, setEstabelecimento] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,23 +44,23 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#329de4" />
-        <Text style={{ marginTop: 10 }}>Carregando informações...</Text>
+      <View style={[styles.center, { backgroundColor: currentTheme.background }]}>
+        <ActivityIndicator size="large" color={APP_BLUE} />
+        <Text style={{ marginTop: 10, color: currentTheme.text }}>Carregando informações...</Text>
       </View>
     );
   }
 
   if (!estabelecimento) {
     return (
-      <View style={styles.center}>
-        <Text style={{ color: "#999" }}>Nenhum estabelecimento encontrado.</Text>
+      <View style={[styles.center, { backgroundColor: currentTheme.background }]}>
+        <Text style={{ color: currentTheme.textSecondary }}>Nenhum estabelecimento encontrado.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: currentTheme.background }]}>
       {estabelecimento.logo ? (
         <Image
           source={{ uri: estabelecimento.logo }}
@@ -68,27 +75,27 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <Text style={styles.title}>{estabelecimento.nomeEstabelecimento}</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.title, { color: APP_BLUE }]}>{estabelecimento.nomeEstabelecimento}</Text>
+      <Text style={[styles.subtitle, { color: currentTheme.textSecondary }]}>
         {estabelecimento.ramoAtividade}
       </Text>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.label}>Telefone:</Text>
-        <Text style={styles.value}>{estabelecimento.telefone}</Text>
+      <View style={[styles.infoCard, { backgroundColor: currentTheme.card }]}>
+        <Text style={[styles.label, { color: currentTheme.text }]}>Telefone:</Text>
+        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>{estabelecimento.telefone}</Text>
 
-        <Text style={styles.label}>Endereço:</Text>
-        <Text style={styles.value}>
+        <Text style={[styles.label, { color: currentTheme.text }]}>Endereço:</Text>
+        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>
           {estabelecimento.logradouro}, {estabelecimento.numero}{" "}
           {estabelecimento.complemento ? `- ${estabelecimento.complemento}` : ""}
         </Text>
-        <Text style={styles.value}>
+        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>
           {estabelecimento.bairro}, {estabelecimento.cidade} - {estabelecimento.estado}
         </Text>
-        <Text style={styles.value}>CEP: {estabelecimento.cep}</Text>
+        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>CEP: {estabelecimento.cep}</Text>
 
-        <Text style={styles.label}>Criado em:</Text>
-        <Text style={styles.value}>
+        <Text style={[styles.label, { color: currentTheme.text }]}>Criado em:</Text>
+        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>
           {estabelecimento.createdAt?.toDate
             ? estabelecimento.createdAt.toDate().toLocaleString("pt-BR")
             : ""}
@@ -100,16 +107,14 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: width * 0.06,
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   logo: {
     width: width * 0.4,
@@ -131,23 +136,20 @@ const styles = StyleSheet.create({
   logoPlaceholderText: {
     fontSize: width * 0.12,
     fontWeight: "bold",
-    color: "#329de4",
+    color: APP_BLUE,
   },
   title: {
     fontSize: width * 0.06,
     fontWeight: "bold",
-    color: "#329de4",
     textAlign: "center",
   },
   subtitle: {
     fontSize: width * 0.04,
-    color: "#777",
     marginBottom: 20,
     textAlign: "center",
   },
   infoCard: {
     width: "100%",
-    backgroundColor: "#f9f9f9",
     padding: 20,
     borderRadius: 12,
     marginTop: 10,
@@ -155,11 +157,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: "600",
-    color: "#333",
     marginTop: 10,
   },
   value: {
     fontSize: width * 0.04,
-    color: "#555",
   },
 });

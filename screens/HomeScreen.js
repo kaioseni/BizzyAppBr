@@ -5,14 +5,19 @@ import { Plus, Calendar, User } from "lucide-react-native";
 import dayjs from "dayjs";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
+import { lightTheme, darkTheme } from "../utils/themes";
 import { db } from "../firebase/firebaseConfig";
 import { collection, query, where, orderBy, Timestamp, onSnapshot, getDoc, getDocs, doc } from "firebase/firestore";
 
 const { width, height } = Dimensions.get("window");
+const APP_BLUE = "#329de4";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { user, loading } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+  const currentTheme = theme === "dark" ? darkTheme : lightTheme;
 
   const [agendamentos, setAgendamentos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
@@ -25,7 +30,6 @@ export default function HomeScreen() {
     if (!user?.uid) return;
 
     const unsubscribes = [];
-
     const temp = {
       padrao: [],
       importados: [],
@@ -120,7 +124,9 @@ export default function HomeScreen() {
     );
 
     const unsubscribe = onSnapshot(q, snapshot => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(item => item.status !== "finalizado");
       setAgendamentos(data);
     });
 
@@ -142,12 +148,13 @@ export default function HomeScreen() {
     return agendamentoTime.isBefore(dayjs());
   };
 
-  if (loading) return <Text style={styles.loadingText}>Carregando usuário...</Text>;
+  if (loading) return <Text style={[styles.loadingText, { color: currentTheme.text }]}>Carregando usuário...</Text>;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+
       <TouchableOpacity
-        style={styles.dateButton}
+        style={[styles.dateButton, { backgroundColor: APP_BLUE }]}
         onPress={() => setShowPicker(true)}
       >
         <Calendar size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -174,48 +181,51 @@ export default function HomeScreen() {
           return (
             <TouchableOpacity
               onPress={() => navigation.navigate("ManageService", { agendamento: item })}
-              style={[styles.card, atrasado && { borderColor: "red", backgroundColor: "#ffe6e6" }]}
+              style={[
+                styles.card,
+                { backgroundColor: currentTheme.card, borderColor: APP_BLUE },
+                atrasado && { borderColor: "red", backgroundColor: "#ffe6e6" }
+              ]}
             >
               <View style={styles.cardHeader}>
-                <Text style={[styles.time, atrasado && { color: "red" }]}>
+                <Text style={[styles.time, { color: APP_BLUE }]}>
                   {item.dataHora instanceof Date
                     ? dayjs(item.dataHora).format("HH:mm")
                     : dayjs(item.dataHora.toDate()).format("HH:mm")}
                 </Text>
-                <Text style={styles.name}>{item.nomeCliente}</Text>
+                <Text style={[styles.name, { color: currentTheme.text }]}>{item.nomeCliente}</Text>
               </View>
 
               {item.servico && (
-                <Text style={styles.servico}>
+                <Text style={[styles.servico, { color: APP_BLUE }]}>
                   Serviço: {getNomeServico(item.servico)}
                 </Text>
               )}
 
               {item.colaborador && (
                 <View style={styles.colaboradorWrapper}>
-                  <User size={14} color="#329de4" style={{ marginRight: 6 }} />
-                  <Text style={styles.colaborador}>{item.colaborador}</Text>
+                  <User size={14} color={APP_BLUE} style={{ marginRight: 6 }} />
+                  <Text style={[styles.colaborador, { color: APP_BLUE }]}>{item.colaborador}</Text>
                 </View>
               )}
 
-              <Text style={styles.phone}>{item.telefone}</Text>
+              <Text style={[styles.phone, { color: currentTheme.text }]}>{item.telefone}</Text>
             </TouchableOpacity>
           );
         }}
-
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhum agendamento para este dia</Text>
+            <Text style={[styles.emptyText, { color: currentTheme.text }]}>Nenhum agendamento para este dia</Text>
           </View>
         }
       />
 
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: APP_BLUE }]}
         onPress={() => navigation.navigate("AppointmentsScreen")}
       >
-        <Plus size={28} color="white" />
+        <Plus size={28} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -225,14 +235,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: width * 0.05,
-    paddingTop: height * 0.08,
-    backgroundColor: "#fff"
+    paddingTop: height * 0.08
   },
   dateButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#329de4",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -250,13 +258,9 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontSize: width * 0.045
   },
-  phone: {
-    fontSize: width * 0.038,
-    color: "#666"
-  },
+  phone: { fontSize: width * 0.038 },
   servico: {
     fontSize: width * 0.04,
-    color: "#329de4",
     marginBottom: 4,
     fontWeight: "500"
   },
@@ -267,36 +271,29 @@ const styles = StyleSheet.create({
   },
   colaborador: {
     fontSize: width * 0.038,
-    color: "#329de4",
     fontWeight: "500"
   },
   fab: {
     position: "absolute",
     bottom: width * 0.08,
     right: width * 0.08,
-    backgroundColor: "#329de4",
     width: width * 0.14,
     height: width * 0.14,
     borderRadius: width * 0.07,
     justifyContent: "center",
     alignItems: "center",
     elevation: 6,
-    shadowColor: "#329de4",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6
+    shadowOpacity: 0.3, shadowRadius: 6
   },
   card: {
-    backgroundColor: "#fff",
     padding: width * 0.04,
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.1, shadowRadius: 4,
     elevation: 3,
-    borderWidth: 1,
-    borderColor: "#329de4"
+    borderWidth: 1
   },
   cardHeader: {
     flexDirection: "row",
@@ -305,16 +302,10 @@ const styles = StyleSheet.create({
   },
   time: {
     fontWeight: "bold",
-    color: "#329de4",
     fontSize: width * 0.042
   },
-  name: {
-    fontWeight: "600",
-    fontSize: width * 0.042
-  },
-  separator: {
-    height: 8
-  },
+  name: { fontWeight: "600", fontSize: width * 0.042 },
+  separator: { height: 8 },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -322,7 +313,6 @@ const styles = StyleSheet.create({
     height: height * 0.6
   },
   emptyText: {
-    color: "#777",
     fontSize: width * 0.045,
     textAlign: "center"
   },

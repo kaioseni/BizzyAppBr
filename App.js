@@ -1,12 +1,14 @@
-import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppRoutes from './routes/AppRoutes';
 import { AuthProvider } from './contexts/AuthContext';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './utils/toastConfig';
+import { ThemeProvider, ThemeContext } from "./contexts/ThemeContext";
+import { StatusBar } from 'expo-status-bar';
+import { lightTheme, darkTheme } from "./utils/themes";
 
 const Loading = () => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -40,9 +42,23 @@ export default function App() {
   return (
     <NavigationContainer>
       <AuthProvider>
-        <AppRoutes viewOnboarding={viewOnboarding} />
-        <StatusBar style="auto" />
-        <Toast config={toastConfig}/>
+        <ThemeProvider>
+          <ThemeContext.Consumer>
+            {({ theme }) => {
+              const currentTheme = theme === "dark" ? darkTheme : lightTheme;
+              return (
+                <>
+                  <StatusBar
+                    style={theme === "dark" ? "light" : "dark"}
+                    backgroundColor={currentTheme.background}
+                  />
+                  <AppRoutes viewOnboarding={viewOnboarding} />
+                  <Toast config={toastConfig} />
+                </>
+              );
+            }}
+          </ThemeContext.Consumer>
+        </ThemeProvider>
       </AuthProvider>
     </NavigationContainer>
   );

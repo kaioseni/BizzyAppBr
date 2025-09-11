@@ -187,8 +187,6 @@ export default function AtendimentoScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Editar Atendimento</Text>
-
             <Text style={styles.label}>Nome do Cliente</Text>
             <TextInput
                 placeholder="Nome do cliente"
@@ -288,7 +286,7 @@ export default function AtendimentoScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+    container: { flex: 1, padding: 20, backgroundColor: "#fff", justifyContent: "center" },
     title: {
         fontSize: 22,
         fontWeight: "bold",
