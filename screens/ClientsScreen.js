@@ -2,13 +2,32 @@ import { useEffect, useState, useContext } from "react";
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 import { db } from "../firebase/firebaseConfig";
 import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 
 const { width } = Dimensions.get("window");
+const APP_BLUE = "#329de4";
 
 export default function ClientsScreen() {
   const { user } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+
+  const currentTheme = theme === "dark"
+    ? {
+      background: "#121212",
+      card: "#1e1e1e",
+      text: "#fff",
+      textSecondary: "#ccc",
+      input: "#2a2a2a",
+    }
+    : {
+      background: "#f2f5f7",
+      card: "#fff",
+      text: "#333",
+      textSecondary: "#555",
+      input: "#fff",
+    };
 
   const [agendamentos, setAgendamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -78,11 +97,10 @@ export default function ClientsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <View style={styles.filtersContainer}>
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterButton, { backgroundColor: APP_BLUE }]}
           onPress={() => {
             setDateMode("start");
             setShowDatePicker(true);
@@ -94,7 +112,7 @@ export default function ClientsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterButton, { backgroundColor: APP_BLUE }]}
           onPress={() => {
             setDateMode("end");
             setShowDatePicker(true);
@@ -107,14 +125,18 @@ export default function ClientsScreen() {
 
         {(dateRange.start || dateRange.end) && (
           <TouchableOpacity style={{ marginLeft: 8 }} onPress={clearFilters}>
-            <Text style={styles.clearText}>✕</Text>
+            <Text style={[styles.clearText, { color: "#e74c3c" }]}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: currentTheme.input, color: currentTheme.text, borderColor: currentTheme.textSecondary },
+        ]}
         placeholder="Buscar cliente pelo nome..."
+        placeholderTextColor={currentTheme.textSecondary}
         value={search}
         onChangeText={setSearch}
       />
@@ -123,30 +145,33 @@ export default function ClientsScreen() {
         data={filteredClients}
         keyExtractor={(item) => item.nomeCliente + item.telefone}
         renderItem={({ item }) => (
-          <View style={styles.clientCard}>
+          <View
+            style={[
+              styles.clientCard,
+              {
+                backgroundColor: theme === "dark" ? "#1e1e1e" : "#e6f0fa",
+                borderLeftColor: APP_BLUE,
+              },
+            ]}
+          >
             <View style={styles.clientHeader}>
-              <Text style={styles.clientName}>{item.nomeCliente}</Text>
-              <Text style={styles.clientDate}>
+              <Text style={[styles.clientName, { color: APP_BLUE }]}>{item.nomeCliente}</Text>
+              <Text style={[styles.clientDate, { color: currentTheme.textSecondary }]}>
                 {item.dataHora.toLocaleDateString("pt-BR")}
               </Text>
             </View>
-            <Text style={styles.clientPhone}>{item.telefone}</Text>
+            <Text style={[styles.clientPhone, { color: currentTheme.text }]}>{item.telefone}</Text>
           </View>
         )}
         ListEmptyComponent={
-          <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
+          <Text style={{ textAlign: "center", marginTop: 20, color: currentTheme.textSecondary }}>
             Nenhum cliente encontrado
           </Text>
         }
       />
 
       {showDatePicker && (
-        <DateTimePicker
-          value={new Date()}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
+        <DateTimePicker value={new Date()} mode="date" display="default" onChange={handleDateChange} />
       )}
     </View>
   );
@@ -156,7 +181,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: width * 0.04,
-    backgroundColor: "#f2f5f7",
   },
   filtersContainer: {
     flexDirection: "row",
@@ -166,7 +190,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterButton: {
-    backgroundColor: "#329de4",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -178,43 +201,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   clearText: {
-    color: "#e74c3c",
     fontWeight: "bold",
     fontSize: 18,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
     fontSize: width * 0.04,
-    backgroundColor: "#fff",
-  },
-  card: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  nome: {
-    fontSize: width * 0.045,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  telefone: {
-    fontSize: width * 0.04,
-    color: "#555",
   },
   clientCard: {
-    backgroundColor: "#e6f0fa",
     borderLeftWidth: 5,
-    borderLeftColor: "#329de4",
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
@@ -232,15 +230,11 @@ const styles = StyleSheet.create({
   clientName: {
     fontSize: width * 0.045,
     fontWeight: "700",
-    color: "#329de4",
   },
   clientDate: {
     fontSize: width * 0.035,
-    color: "#555",
   },
   clientPhone: {
     fontSize: width * 0.04,
-    color: "#333",
   },
-
 });

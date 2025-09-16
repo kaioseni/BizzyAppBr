@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Alert, ActivityIndicator } from "react-native";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 import { Plus, Star, StarOff, Trash2, Edit3, Layers, User, Download } from "lucide-react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import Toast from "react-native-toast-message";
@@ -15,6 +16,23 @@ const { width, height } = Dimensions.get("window");
 
 export default function ServicesScreen({ navigation }) {
   const { user } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+  const themeColors = theme === "dark" ? {
+    background: "#121212",
+    text: "#eee",
+    card: "#1f1f1f",
+    primary: "#329de4",
+    subtext: "#ccc",
+    onPrimary: "#fff"
+  } : {
+    background: "#fff",
+    text: "#333",
+    card: "#f9f9f9",
+    primary: "#329de4",
+    subtext: "#555",
+    onPrimary: "#fff"
+  };
+
   const [servicos, setServicos] = useState([]);
   const [favoritosIds, setFavoritosIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -113,8 +131,6 @@ export default function ServicesScreen({ navigation }) {
     return () => unsubscribes.forEach(fn => fn && fn());
   }, [user?.uid, ramoSelecionado, ramoUsuario]);
 
-
-
   const handleDelete = (item) => {
     Alert.alert(
       "Remover serviço",
@@ -163,12 +179,12 @@ export default function ServicesScreen({ navigation }) {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { backgroundColor: themeColors.card, borderColor: themeColors.primary }]}
       onPress={() => navigation.navigate("EditServiceScreen", { servico: item })}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.name} numberOfLines={1}>{item.nome}</Text>
-        {item.descricao && <Text style={styles.descricao} numberOfLines={2}>{item.descricao}</Text>}
+        <Text style={[styles.name, { color: themeColors.text }]} numberOfLines={1}>{item.nome}</Text>
+        {item.descricao && <Text style={[styles.descricao, { color: themeColors.subtext }]} numberOfLines={2}>{item.descricao}</Text>}
         <View style={styles.labelContainer}>
           {item.tipo === "padrao" && (
             <View style={[styles.label, { backgroundColor: "#3498db" }]}>
@@ -204,9 +220,7 @@ export default function ServicesScreen({ navigation }) {
               {favoritosIds.has(item.id) ? <Star size={23} color="#f1c40f" /> : <StarOff size={22} color="#888" />}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleDelete(item)}>
-
               <Trash2 size={23} color="red" />
-
             </TouchableOpacity>
           </>
         ) : (
@@ -222,8 +236,8 @@ export default function ServicesScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.infoText}>Selecione um Ramo de Atividade para importar outros serviços</Text>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <Text style={[styles.infoText, { color: themeColors.primary }]}>Selecione um Ramo de Atividade para importar outros serviços</Text>
 
       {itemsDropdown.length > 0 && ramoSelecionado && (
         <DropDownPicker
@@ -234,17 +248,33 @@ export default function ServicesScreen({ navigation }) {
           setValue={setRamoSelecionado}
           setItems={setItemsDropdown}
           placeholder="Selecione o ramo de atividade"
-          style={[styles.dropdown, { zIndex: 1000, elevation: 1000 }]}
-          dropDownContainerStyle={{ ...styles.dropdownContainer, zIndex: 1000, elevation: 1000 }}
+          style={[
+            styles.dropdown,
+            {
+              backgroundColor: themeColors.card,
+              borderColor: themeColors.primary
+            }
+          ]}
+          dropDownContainerStyle={[
+            styles.dropdownContainer,
+            {
+              backgroundColor: themeColors.card,
+              borderColor: themeColors.primary
+            }
+          ]}
+          textStyle={{ color: themeColors.text }}
+          labelStyle={{ color: themeColors.text }}
+          placeholderStyle={{ color: themeColors.subtext }}
           listMode="SCROLLVIEW"
         />
       )}
 
-      {loading && <ActivityIndicator size="large" color="#329de4" style={{ marginTop: 50 }} />}
+
+      {loading && <ActivityIndicator size="large" color={themeColors.primary} style={{ marginTop: 50 }} />}
 
       {!loading && servicos.length === 0 && (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Nenhum serviço cadastrado ainda</Text>
+          <Text style={[styles.emptyText, { color: themeColors.subtext }]}>Nenhum serviço cadastrado ainda</Text>
         </View>
       )}
 
@@ -256,8 +286,8 @@ export default function ServicesScreen({ navigation }) {
       />
 
       {ramoSelecionado === "meusServicos" && (
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("CreateServiceScreen")}>
-          <Plus size={28} color="#fff" />
+        <TouchableOpacity style={[styles.fab, { backgroundColor: themeColors.primary }]} onPress={() => navigation.navigate("CreateServiceScreen")}>
+          <Plus size={28} color={themeColors.onPrimary} />
         </TouchableOpacity>
       )}
     </View>
@@ -265,19 +295,88 @@ export default function ServicesScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: width * 0.05, paddingTop: height * 0.03, backgroundColor: "#fff" },
-  dropdown: { borderColor: "#329de4", borderRadius: 10, backgroundColor: "#f9f9f9", paddingHorizontal: 10, height: 50, marginBottom: 15 },
-  dropdownContainer: { borderColor: "#329de4", borderRadius: 10 },
-  card: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: width * 0.04, backgroundColor: "#f9f9f9", borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: "#329de4" },
-  cardHeader: { flex: 1, flexShrink: 1, marginRight: 10 },
-  name: { fontSize: width * 0.045, fontWeight: "600", color: "#333", maxWidth: width * 0.65 },
-  descricao: { fontSize: width * 0.04, color: "#555", marginTop: 4, maxWidth: width * 0.7 },
-  labelContainer: { flexDirection: "row", marginTop: 6 },
-  label: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 6 },
-  labelText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  actions: { flexDirection: "row", alignItems: "center" },
-  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", height: height * 0.6 },
-  emptyText: { color: "#777", fontSize: width * 0.045, textAlign: "center" },
-  fab: { position: "absolute", bottom: width * 0.08, right: width * 0.08, backgroundColor: "#329de4", width: width * 0.14, height: width * 0.14, borderRadius: width * 0.07, justifyContent: "center", alignItems: "center", elevation: 6 },
-  infoText: { fontSize: width * 0.042, color: "#329de4", fontWeight: "600", marginBottom: 10, textAlign: "center" },
+  container: {
+    flex: 1,
+    paddingHorizontal: width * 0.05,
+    paddingTop: height * 0.03
+  },
+  dropdown: {
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 50,
+    marginBottom: 15
+  },
+  dropdownContainer: { borderRadius: 10 },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: width * 0.04,
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1
+  },
+  cardHeader: {
+    flex: 1,
+    flexShrink: 1,
+    marginRight: 10
+  },
+  name: {
+    fontSize: width * 0.045,
+    fontWeight: "600",
+    maxWidth: width * 0.65
+  },
+  descricao: {
+    fontSize: width * 0.04,
+    marginTop: 4,
+    maxWidth: width * 0.7
+  },
+  labelContainer: {
+    flexDirection: "row",
+    marginTop: 6
+  },
+  label: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginRight: 6
+  },
+  labelText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600"
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: height * 0.6
+  },
+  emptyText: {
+    fontSize: width * 0.045,
+    textAlign: "center"
+  },
+  fab: {
+    position: "absolute",
+    bottom: width * 0.08,
+    right: width * 0.08,
+    width: width * 0.14,
+    height: width * 0.14,
+    borderRadius: width * 0.07,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 6
+  },
+  infoText: {
+    fontSize: width * 0.042,
+    fontWeight: "600",
+    marginBottom: 10,
+    textAlign: "center"
+  },
 });

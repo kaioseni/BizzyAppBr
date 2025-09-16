@@ -5,20 +5,25 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState("light"); // padrão light
+  const [theme, setTheme] = useState(null);
+  const [systemTheme, setSystemTheme] = useState(null);
+
+  const loadTheme = async () => {
+    const savedTheme = await AsyncStorage.getItem("@appTheme");
+    setTheme(savedTheme || "system");
+
+    const currentSystemTheme = Appearance.getColorScheme() || "light";
+    setSystemTheme(currentSystemTheme);
+  };
 
   useEffect(() => {
-    const loadTheme = async () => {
-      const savedTheme = await AsyncStorage.getItem("@appTheme");
-      if (savedTheme) {
-        setTheme(savedTheme);
-      } else {
-        const systemTheme = Appearance.getColorScheme(); // light ou dark
-        setTheme(systemTheme || "light");
-      }
-    };
-
     loadTheme();
+
+    const listener = Appearance.addChangeListener(({ colorScheme }) => {
+      setSystemTheme(colorScheme || "light");
+    });
+
+    return () => listener.remove();
   }, []);
 
   const changeTheme = async (newTheme) => {
@@ -26,8 +31,12 @@ export const ThemeProvider = ({ children }) => {
     await AsyncStorage.setItem("@appTheme", newTheme);
   };
 
+  if (!theme || !systemTheme) return null;
+
+  const effectiveTheme = theme === "system" ? systemTheme : theme;
+
   return (
-    <ThemeContext.Provider value={{ theme, changeTheme }}>
+    <ThemeContext.Provider value={{ theme, effectiveTheme, changeTheme }}>
       {children}
     </ThemeContext.Provider>
   );

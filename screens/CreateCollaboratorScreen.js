@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, FlatList, A
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 import { createCollaborator } from "../services/collaborators";
 import { fetchServicosRamoRealtime, fetchServicosImportadosRealtime, fetchServicosPersonalizadosRealtime, fetchRamoUsuario } from "../services/servicesService";
 import { db } from "../firebase/firebaseConfig";
@@ -11,6 +12,28 @@ import { Download, Edit3, Layers, User as UserIcon, CheckSquare, Square } from "
 
 export default function CreateCollaboratorScreen({ navigation }) {
   const { user } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+
+  const colors = {
+    light: {
+      background: "#fff",
+      card: "#f9f9f9",
+      text: "#333",
+      subtext: "#555",
+      border: "#ddd",
+      placeholder: "#777",
+    },
+    dark: {
+      background: "#121212",
+      card: "#1E1E1E",
+      text: "#f5f5f5",
+      subtext: "#bbb",
+      border: "#444",
+      placeholder: "#aaa",
+    },
+  };
+
+  const currentColors = colors[theme] || colors.light;
 
   const [nome, setNome] = useState("");
   const [foto, setFoto] = useState(null);
@@ -118,60 +141,64 @@ export default function CreateCollaboratorScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-  if (!nome.trim()) {
-    Toast.show({ type: "error", text1: "O nome é obrigatório" });
-    return;
-  }
+    if (!nome.trim()) {
+      Toast.show({ type: "error", text1: "O nome é obrigatório" });
+      return;
+    }
 
-  try {
-    const preferenciasSelecionadas = servicos
-      .filter((s) => preferencias.has(s.id))
-      .map((s) => ({
-        id: s.id,
-        nome: s.nome,
-        tipo: s.tipo,
-      }));
+    try {
+      const preferenciasSelecionadas = servicos
+        .filter((s) => preferencias.has(s.id))
+        .map((s) => ({
+          id: s.id,
+          nome: s.nome,
+          tipo: s.tipo,
+        }));
 
-    await createCollaborator({
-      nome,
-      fotoUri: foto ?? null,
-      idEstabelecimento: user.uid,
-      preferenciasSelecionadas,
-    });
+      await createCollaborator({
+        nome,
+        fotoUri: foto ?? null,
+        idEstabelecimento: user.uid,
+        preferenciasSelecionadas,
+      });
 
-    Toast.show({
-      type: "success",
-      text1: "Colaborador cadastrado com sucesso!",
-    });
+      Toast.show({
+        type: "success",
+        text1: "Colaborador cadastrado com sucesso!",
+      });
 
-    setNome("");
-    setFoto(null);
-    setPreferencias(new Set());
-    navigation.goBack();
-  } catch (error) {
-    Toast.show({
-      type: "error",
-      text1: "Erro ao salvar",
-      text2: error.message,
-    });
-    console.log(error.message);
-  }
-};
+      setNome("");
+      setFoto(null);
+      setPreferencias(new Set());
+      navigation.goBack();
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao salvar",
+        text2: error.message,
+      });
+      console.log(error.message);
+    }
+  };
 
   const renderServico = ({ item }) => {
     const selected = preferencias.has(item.id);
     return (
       <TouchableOpacity
-        style={[styles.servicoItem, selected && styles.servicoItemSelected]}
+        style={[
+          styles.servicoItem,
+          { backgroundColor: currentColors.card, borderColor: currentColors.border },
+          selected && { borderColor: "#329de4", backgroundColor: "#e9f5ff" },
+        ]}
         onPress={() => togglePreferencia(item.id)}
         activeOpacity={0.8}
       >
         <View style={{ flex: 1 }}>
-          <Text style={styles.servicoNome} numberOfLines={1}>
+          <Text style={[styles.servicoNome, { color: currentColors.text }]} numberOfLines={1}>
             {item.nome}
           </Text>
           {item.descricao ? (
-            <Text style={styles.servicoDescricao} numberOfLines={2}>
+            <Text style={[styles.servicoDescricao, { color: currentColors.subtext }]} numberOfLines={2}>
               {item.descricao}
             </Text>
           ) : null}
@@ -208,7 +235,7 @@ export default function CreateCollaboratorScreen({ navigation }) {
           {selected ? (
             <CheckSquare size={24} color="#329de4" />
           ) : (
-            <Square size={24} color="#999" />
+            <Square size={24} color={currentColors.subtext} />
           )}
         </View>
       </TouchableOpacity>
@@ -216,30 +243,43 @@ export default function CreateCollaboratorScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Novo Colaborador</Text>
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
+      <Text style={[styles.title, { color: "#329de4" }]}>Novo Colaborador</Text>
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            borderColor: currentColors.border,
+            color: currentColors.text,
+          },
+        ]}
         placeholder="Nome do colaborador"
+        placeholderTextColor={currentColors.placeholder}
         value={nome}
         onChangeText={setNome}
       />
 
-      <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+      <TouchableOpacity
+        style={[
+          styles.imagePicker,
+          { borderColor: currentColors.border, backgroundColor: currentColors.card },
+        ]}
+        onPress={pickImage}
+      >
         {foto ? (
           <Image source={{ uri: foto }} style={styles.image} />
         ) : (
-          <Text style={{ color: "#777" }}>Selecionar Foto (opcional)</Text>
+          <Text style={{ color: currentColors.placeholder }}>Selecionar Foto (opcional)</Text>
         )}
       </TouchableOpacity>
 
-      <Text style={styles.subtitle}>Preferências de Serviços</Text>
+      <Text style={[styles.subtitle, { color: "#329de4" }]}>Preferências de Serviços</Text>
 
       {loadingServicos ? (
         <ActivityIndicator size="large" color="#329de4" style={{ marginTop: 12 }} />
       ) : servicos.length === 0 ? (
-        <Text style={{ color: "#777", marginBottom: 8 }}>
+        <Text style={{ color: currentColors.placeholder, marginBottom: 8 }}>
           Nenhum serviço disponível.
         </Text>
       ) : (
@@ -259,17 +299,15 @@ export default function CreateCollaboratorScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  container: { flex: 1, padding: 20 },
   title: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
-    color: "#329de4",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
     marginBottom: 15,
@@ -280,34 +318,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 8,
     marginBottom: 20,
-    backgroundColor: "#f9f9f9",
   },
   image: { width: "100%", height: "100%", borderRadius: 8 },
   subtitle: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 10,
-    color: "#329de4",
   },
   servicoItem: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
-    backgroundColor: "#f9f9f9",
   },
-  servicoItemSelected: {
-    borderColor: "#329de4",
-    backgroundColor: "#e9f5ff",
-  },
-  servicoNome: { fontSize: 15, fontWeight: "600", color: "#333" },
-  servicoDescricao: { fontSize: 13, color: "#555", marginTop: 2 },
+  servicoNome: { fontSize: 15, fontWeight: "600" },
+  servicoDescricao: { fontSize: 13, marginTop: 2 },
   labelContainer: { flexDirection: "row", marginTop: 6 },
   label: {
     flexDirection: "row",

@@ -38,7 +38,7 @@ export default function AppRoutes({ viewOnboarding }) {
     >
       <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} options={{ headerShown: false }} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={Register} options={{ title: "" }} />
+      <Stack.Screen name="Register" component={Register} options={{ title: "Cadastrar Empresa" }} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: "", headerShown: true }} />
       <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="AppointmentsScreen" component={AppointmentsScreen} options={{ title: "Novo Agendamento" }} />

@@ -1,17 +1,17 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState, useContext } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import AppRoutes from './routes/AppRoutes';
-import { AuthProvider } from './contexts/AuthContext';
-import Toast from 'react-native-toast-message';
-import { toastConfig } from './utils/toastConfig';
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import AppRoutes from "./routes/AppRoutes";
+import { AuthProvider } from "./contexts/AuthContext";
+import Toast from "react-native-toast-message";
+import { getToastConfig } from "./utils/toastConfig";
 import { ThemeProvider, ThemeContext } from "./contexts/ThemeContext";
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from "expo-status-bar";
 import { lightTheme, darkTheme } from "./utils/themes";
 
 const Loading = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
     <ActivityIndicator size="large" />
   </View>
 );
@@ -22,12 +22,12 @@ export default function App() {
 
   const checkOnboarding = async () => {
     try {
-      const value = await AsyncStorage.getItem('@viewedOnboarding');
+      const value = await AsyncStorage.getItem("@viewedOnboarding");
       if (value !== null) {
         setViewOnboarding(true);
       }
     } catch (err) {
-      console.log('Error @checkOnboarding: ', err);
+      console.log("Error @checkOnboarding: ", err);
     } finally {
       setLoading(false);
     }
@@ -46,6 +46,7 @@ export default function App() {
           <ThemeContext.Consumer>
             {({ theme }) => {
               const currentTheme = theme === "dark" ? darkTheme : lightTheme;
+
               return (
                 <>
                   <StatusBar
@@ -53,7 +54,7 @@ export default function App() {
                     backgroundColor={currentTheme.background}
                   />
                   <AppRoutes viewOnboarding={viewOnboarding} />
-                  <Toast config={toastConfig} />
+                  <Toast config={getToastConfig(currentTheme)} />
                 </>
               );
             }}
@@ -67,8 +68,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

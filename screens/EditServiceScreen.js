@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 import Toast from "react-native-toast-message";
 import { updateServico } from "../services/servicesService";
 
@@ -9,6 +10,11 @@ const { width } = Dimensions.get("window");
 export default function EditServiceScreen({ route, navigation }) {
   const { servico } = route.params;
   const { user } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+
+  const colors = theme === "dark"
+    ? { background: "#121212", text: "#f5f5f5", card: "#1e1e1e", border: "#444" }
+    : { background: "#fff", text: "#333", card: "#f9f9f9", border: "#ccc" };
 
   const [nome, setNome] = useState(servico?.nome || "");
   const [descricao, setDescricao] = useState(servico?.descricao || "");
@@ -26,7 +32,6 @@ export default function EditServiceScreen({ route, navigation }) {
 
       await updateServico(user.uid, servicoAtualizado);
 
-
       Toast.show({
         type: "success",
         text1: "Serviço atualizado",
@@ -41,21 +46,27 @@ export default function EditServiceScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Nome do Serviço</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.label, { color: colors.text }]}>Nome do Serviço</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
         value={nome}
         onChangeText={setNome}
         placeholder="Digite o nome do serviço"
+        placeholderTextColor="#888"
       />
 
-      <Text style={styles.label}>Descrição</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Descrição</Text>
       <TextInput
-        style={[styles.input, styles.textArea]}
+        style={[
+          styles.input,
+          styles.textArea,
+          { backgroundColor: colors.card, borderColor: colors.border, color: colors.text },
+        ]}
         value={descricao}
         onChangeText={setDescricao}
         placeholder="Digite a descrição do serviço"
+        placeholderTextColor="#888"
         multiline
         numberOfLines={4}
       />
@@ -71,22 +82,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: width * 0.05,
-    backgroundColor: "#fff",
+    justifyContent: "center",
   },
   label: {
     fontSize: width * 0.04,
     fontWeight: "600",
     marginBottom: 8,
-    color: "#333",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
     fontSize: width * 0.04,
     marginBottom: 15,
-    backgroundColor: "#f9f9f9",
   },
   textArea: {
     height: 100,

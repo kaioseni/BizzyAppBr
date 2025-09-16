@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Clipboard from "expo-clipboard";
 import { AuthContext } from "../contexts/AuthContext";
+import { ThemeContext } from "../contexts/ThemeContext";
 import { db } from "../firebase/firebaseConfig";
 import { collection, query, where, orderBy, Timestamp, onSnapshot, doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -14,11 +15,15 @@ const { width, height } = Dimensions.get("window");
 export default function FinishedScreen() {
   const navigation = useNavigation();
   const { user, loading } = useContext(AuthContext);
+  const { theme } = useContext(ThemeContext);
+
+  const colors = theme === "dark"
+    ? { background: "#121212", text: "#fff", card: "#1f1f1f", primary: "#329de4", secondary: "#329de4", placeholder: "#888" }
+    : { background: "#fff", text: "#333", card: "#f9f9f9", primary: "#329de4", secondary: "#329de4", placeholder: "#777" };
 
   const [finalizados, setFinalizados] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [showPicker, setShowPicker] = useState(false);
-
   const [template, setTemplate] = useState("");
   const [customTemplate, setCustomTemplate] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -103,12 +108,12 @@ Data/Hora: ${item.dataHora instanceof Date
     setModalVisible(false);
   };
 
-  if (loading) return <Text style={styles.loadingText}>Carregando usuário...</Text>;
+  if (loading) return <Text style={[styles.loadingText, { color: colors.text }]}>Carregando usuário...</Text>;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <TouchableOpacity
-        style={styles.dateButton}
+        style={[styles.dateButton, { backgroundColor: colors.secondary }]}
         onPress={() => setShowPicker(true)}
       >
         <Text style={styles.dateButtonText}>
@@ -126,11 +131,11 @@ Data/Hora: ${item.dataHora instanceof Date
       )}
 
       <TouchableOpacity
-        style={styles.editTemplateButton}
+        style={[styles.editTemplateButton, { backgroundColor: colors.primary }]}
         onPress={() => setModalVisible(true)}
       >
         <Edit2 size={16} color="#fff" style={{ marginRight: 6 }} />
-        <Text style={styles.editTemplateText}>Editar Template</Text>
+        <Text style={styles.editTemplateText}>Editar Mensagem Padrão</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -138,39 +143,39 @@ Data/Hora: ${item.dataHora instanceof Date
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingBottom: 20 }}
         renderItem={({ item }) => (
-          <View style={[styles.card, { borderColor: "green", backgroundColor: "#e6ffe6" }]}>
+          <View style={[styles.card, { borderColor: colors.secondary, backgroundColor: colors.card }]}>
             <TouchableOpacity
               onPress={() => navigation.navigate("ManageService", { agendamento: item })}
               style={styles.cardContent}
             >
               <View style={styles.cardHeader}>
-                <Text style={[styles.time, { color: "green" }]}>
+                <Text style={[styles.time, { color: colors.secondary }]}>
                   {item.dataHora instanceof Date
                     ? dayjs(item.dataHora).format("HH:mm")
                     : dayjs(item.dataHora.toDate()).format("HH:mm")}
                 </Text>
-                <Text style={styles.name}>{item.nomeCliente}</Text>
+                <Text style={[styles.name, { color: colors.text }]}>{item.nomeCliente}</Text>
               </View>
 
-              {item.servico && <Text style={styles.servico}>Serviço: {item.servico}</Text>}
+              {item.servico && <Text style={[styles.servico, { color: colors.secondary }]}>Serviço: {item.servico}</Text>}
 
               {item.colaborador && (
                 <View style={styles.colaboradorWrapper}>
-                  <User size={14} color="green" style={{ marginRight: 6 }} />
-                  <Text style={styles.colaborador}>{item.colaborador}</Text>
+                  <User size={14} color={colors.secondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.colaborador, { color: colors.secondary }]}>{item.colaborador}</Text>
                 </View>
               )}
 
-              <Text style={styles.phone}>{item.telefone}</Text>
+              <Text style={[styles.phone, { color: colors.text }]}>{item.telefone}</Text>
             </TouchableOpacity>
 
             <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.shareButton} onPress={() => copiarTexto(item)}>
+              <TouchableOpacity style={[styles.shareButton, { backgroundColor: colors.secondary }]} onPress={() => copiarTexto(item)}>
                 <Copy size={16} color="#fff" style={{ marginRight: 6 }} />
                 <Text style={styles.buttonText}>Copiar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.shareButton} onPress={() => compartilharTexto(item)}>
+              <TouchableOpacity style={[styles.shareButton, { backgroundColor: colors.secondary }]} onPress={() => compartilharTexto(item)}>
                 <Text style={styles.buttonText}>Compartilhar</Text>
               </TouchableOpacity>
             </View>
@@ -179,7 +184,7 @@ Data/Hora: ${item.dataHora instanceof Date
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhum atendimento finalizado neste dia</Text>
+            <Text style={[styles.emptyText, { color: colors.placeholder }]}>Nenhum atendimento finalizado neste dia</Text>
           </View>
         }
       />
@@ -189,16 +194,16 @@ Data/Hora: ${item.dataHora instanceof Date
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Editar Template</Text>
-          <Text style={styles.modalInfo}>Você pode alterar apenas a introdução do atendimento. Os campos do cliente permanecem fixos.</Text>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <Text style={[styles.modalTitle, { color: colors.text }]}>Editar Template</Text>
+          <Text style={[styles.modalInfo, { color: colors.text }]}>Você pode alterar apenas a introdução do atendimento. Os campos do cliente permanecem fixos.</Text>
           <TextInput
-            style={styles.modalInput}
+            style={[styles.modalInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
             multiline
             value={customTemplate}
             onChangeText={setCustomTemplate}
           />
-          <TouchableOpacity style={styles.saveButton} onPress={salvarTemplate}>
+          <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.secondary }]} onPress={salvarTemplate}>
             <Save size={16} color="#fff" style={{ marginRight: 6 }} />
             <Text style={styles.buttonText}>Salvar Template</Text>
           </TouchableOpacity>
@@ -212,13 +217,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: width * 0.05,
-    paddingTop: height * 0.04,
-    backgroundColor: "#fff"
+    paddingTop: height * 0.04
   },
   dateButton: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "green",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -233,7 +236,6 @@ const styles = StyleSheet.create({
   editTemplateButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2d9cdb",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -251,13 +253,9 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontSize: width * 0.045
   },
-  phone: {
-    fontSize: width * 0.038,
-    color: "#666"
-  },
+  phone: { fontSize: width * 0.038 },
   servico: {
     fontSize: width * 0.04,
-    color: "green",
     marginBottom: 4,
     fontWeight: "500"
   },
@@ -268,7 +266,6 @@ const styles = StyleSheet.create({
   },
   colaborador: {
     fontSize: width * 0.038,
-    color: "green",
     fontWeight: "500"
   },
   card: {
@@ -282,25 +279,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8
   },
-  cardContent: {
-    marginBottom: 8,
-  },
+  cardContent: { marginBottom: 8 },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 6
   },
-  time: {
-    fontWeight: "bold",
-    fontSize: width * 0.042
-  },
-  name: {
-    fontWeight: "600",
-    fontSize: width * 0.042
-  },
-  separator: {
-    height: 8
-  },
+  time: { fontWeight: "bold", fontSize: width * 0.042 },
+  name: { fontWeight: "600", fontSize: width * 0.042 },
+  separator: { height: 8 },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -308,18 +295,16 @@ const styles = StyleSheet.create({
     height: height * 0.6
   },
   emptyText: {
-    color: "#777",
     fontSize: width * 0.045,
     textAlign: "center"
   },
   buttonRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between"
   },
   shareButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "green",
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -330,24 +315,15 @@ const styles = StyleSheet.create({
     fontSize: width * 0.036,
     fontWeight: "500"
   },
-  modalContainer: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#fff"
-  },
+  modalContainer: { flex: 1, padding: 16 },
   modalTitle: {
     fontSize: width * 0.045,
     fontWeight: "600",
     marginBottom: 8
   },
-  modalInfo: {
-    fontSize: width * 0.038,
-    marginBottom: 8,
-    color: "#555"
-  },
+  modalInfo: { fontSize: width * 0.038, marginBottom: 8 },
   modalInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
     fontSize: width * 0.038,
@@ -357,7 +333,6 @@ const styles = StyleSheet.create({
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "green",
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
