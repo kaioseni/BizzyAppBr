@@ -1,6 +1,6 @@
-import { useEffect, useState, useContext } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState, useContext } from "react";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Modal, BackHandler } from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Plus, Calendar, User } from "lucide-react-native";
 import dayjs from "dayjs";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -9,6 +9,7 @@ import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
 import { db } from "../firebase/firebaseConfig";
 import { collection, query, where, orderBy, Timestamp, onSnapshot, getDoc, getDocs, doc } from "firebase/firestore";
+
 
 const { width, height } = Dimensions.get("window");
 const APP_BLUE = "#329de4";
@@ -26,16 +27,28 @@ export default function HomeScreen() {
   const [servicos, setServicos] = useState([]);
   const [favoritosServicos, setFavoritosServicos] = useState(new Set());
 
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const backAction = () => {
+        setExitModalVisible(true);
+        return true; 
+      };
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        backAction
+      );
+      return () => backHandler.remove();
+    }, [])
+  );
+
   useEffect(() => {
     if (!user?.uid) return;
 
     const unsubscribes = [];
     const temp = {
-      padrao: [],
-      importados: [],
-      personalizados: [],
-      criados: [],
-      favoritos: new Set(),
+      padrao: [], importados: [], personalizados: [], criados: [], favoritos: new Set(),
     };
 
     const mergeServicos = () => {
@@ -175,7 +188,7 @@ export default function HomeScreen() {
       <FlatList
         data={agendamentos}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         renderItem={({ item }) => {
           const atrasado = isLate(item.dataHora);
           return (
@@ -221,12 +234,38 @@ export default function HomeScreen() {
         }
       />
 
+      {/* FAB */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: APP_BLUE }]}
         onPress={() => navigation.navigate("AppointmentsScreen")}
       >
         <Plus size={28} color="#fff" />
       </TouchableOpacity>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={exitModalVisible}
+        onRequestClose={() => setExitModalVisible(false)}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+          <View style={[styles.modalContainer, { backgroundColor: currentTheme.card }]}>
+            <Text style={[styles.modalText, { color: currentTheme.text }]}>
+              Você está prestes a sair do app
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: "#329de4" }]}
+              onPress={() => BackHandler.exitApp()}
+            >
+              <Text style={styles.modalButtonText}>Sair</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setExitModalVisible(false)}>
+              <Text style={[styles.cancelText, { color: currentTheme.text }]}>Agora Não</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -291,7 +330,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
     borderWidth: 1
   },
@@ -316,4 +356,35 @@ const styles = StyleSheet.create({
     fontSize: width * 0.045,
     textAlign: "center"
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: width * 0.8,
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: width * 0.045,
+    textAlign: "center",
+    marginBottom: 20
+  },
+  modalButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+    marginBottom: 12,
+    alignItems: "center"
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: width * 0.045
+  },
+  cancelText: {
+    fontSize: width * 0.042
+  }
 });

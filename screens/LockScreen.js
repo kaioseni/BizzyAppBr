@@ -1,4 +1,3 @@
-// screens/LockScreen.js
 import React, { useContext, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image, Dimensions } from "react-native";
 import { AuthContext } from "../contexts/AuthContext";
@@ -77,7 +76,7 @@ export default function LockScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    justifyContent: "space-between", // força o botão para baixo
+    justifyContent: "space-between",  
     alignItems: "center", 
     paddingHorizontal: 20,
     paddingVertical: 40,
@@ -85,12 +84,12 @@ const styles = StyleSheet.create({
   centerContent: {
     justifyContent: "center",
     alignItems: "center",
-    flex: 1, // garante que ocupe o espaço central
+    flex: 1,  
   },
   bottomContent: {
     width: "100%",
     alignItems: "center",
-    marginBottom: 10, // pequeno espaçamento da borda
+    marginBottom: 10, 
   },
   logo: {
     marginBottom: height * 0.05,

@@ -25,11 +25,9 @@ export default function App() {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Check onboarding
         const onboarding = await AsyncStorage.getItem("@viewedOnboarding");
         if (onboarding !== null) setViewOnboarding(true);
 
-        // Check biometrics
         const useBio = await AsyncStorage.getItem("useBiometrics");
         if (useBio === "true") setLockEnabled(true);
       } catch (err) {
