@@ -17,8 +17,10 @@
     "@react-navigation/bottom-tabs": "^7.4.6",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.24",
+    "@supabase/supabase-js": "^2.57.4",
     "dayjs": "^1.11.14",
     "expo": "~53.0.20",
+    "expo-clipboard": "~7.1.5",
     "expo-env": "^1.1.1",
     "expo-file-system": "~18.1.11",
     "expo-image-picker": "~16.1.4",
@@ -34,12 +36,12 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-dropdown-picker": "^5.4.6",
     "react-native-image-picker": "^8.2.1",
+    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-mask-text": "^0.15.0",
     "react-native-paper": "^5.14.5",
     "react-native-picker-select": "^9.3.1",
     "react-native-svg": "15.11.2",
-    "react-native-toast-message": "^2.3.3",
-    "expo-clipboard": "~7.1.5"
+    "react-native-toast-message": "^2.3.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

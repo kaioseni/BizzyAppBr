@@ -14,7 +14,6 @@ export const buscarEnderecoPorCEP = async (cep) => {
       estado: data.uf,
     };
   } catch (error) {
-    console.error("Erro ao buscar CEP:", error);
     throw error;
   }
 };

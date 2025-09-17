@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { db } from "../firebase/firebaseConfig";
 import { doc, setDoc, collection } from "firebase/firestore";
 import { AuthContext } from "../contexts/AuthContext";
@@ -59,8 +59,17 @@ export default function CreateServiceScreen({ navigation }) {
     }
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
+return (
+  <KeyboardAvoidingView
+    style={{ flex: 1, backgroundColor: themeColors.background }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+  >
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={[styles.title, { color: themeColors.primary }]}>Novo Serviço</Text>
 
       <TextInput
@@ -77,20 +86,21 @@ export default function CreateServiceScreen({ navigation }) {
       <TextInput
         style={[
           styles.input,
-          { backgroundColor: themeColors.card, borderColor: themeColors.primary, color: themeColors.text },
+          { backgroundColor: themeColors.card, borderColor: themeColors.primary, color: themeColors.text, height: 120, textAlignVertical: "top" },
         ]}
         placeholder="Descrição do Serviço"
         placeholderTextColor={themeColors.text + "99"}
         value={descricao}
         onChangeText={setDescricao}
-        multiline={true}
+        multiline
       />
 
       <TouchableOpacity style={[styles.btn, { backgroundColor: themeColors.primary }]} onPress={handleSave}>
         <Text style={[styles.btnText, { color: "#FFF" }]}>Salvar</Text>
       </TouchableOpacity>
-    </View>
-  );
+    </ScrollView>
+  </KeyboardAvoidingView>
+);
 }
 
 const styles = StyleSheet.create({

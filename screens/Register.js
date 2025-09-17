@@ -147,7 +147,6 @@ export default function Register({ navigation }) {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
-
         <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
           {logo ? (
             <Image source={{ uri: logo }} style={styles.logo} />
@@ -239,9 +238,9 @@ export default function Register({ navigation }) {
           />
           <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
             {showPassword ? (
-              <Eye size={20} color="#3498db" />
+              <Eye size={20} color="#3498db" /> 
             ) : (
-              <EyeOff size={20} color="#3498db" />
+              <EyeOff size={20} color="#3498db" /> 
             )}
           </TouchableOpacity>
         </View>

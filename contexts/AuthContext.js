@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import { auth, db } from "../firebase/firebaseConfig";
-import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, setDoc, collection } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -14,8 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-
-  // Escuta mudanças no Firebase Auth
+ 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -28,8 +27,7 @@ export const AuthProvider = ({ children }) => {
 
     return () => unsubscribe();
   }, []);
-
-  // Upload de imagem
+ 
   const uploadImageAsync = async (uri, path) => {
     const response = await fetch(uri);
     const blob = await response.blob();
@@ -37,8 +35,7 @@ export const AuthProvider = ({ children }) => {
     await uploadBytes(storageRef, blob);
     return await getDownloadURL(storageRef);
   };
-
-  // Registro de usuário + estabelecimento
+ 
   const register = async (email, password, extraData) => {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -70,8 +67,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const resetPassword = async (email) => sendPasswordResetEmail(auth, email);
-
-  // Pergunta ao usuário se deseja ativar a biometria
+  
+  const logout = async () => {
+    try {
+      await firebaseSignOut(auth);
+      setUser(null);
+      await AsyncStorage.removeItem("uid");
+      await AsyncStorage.removeItem("useBiometrics");
+    } catch (error) {
+      console.log("Erro ao sair:", error);
+    }
+  }; 
   const promptEnableBiometrics = async (uid) => {
     if (!biometricAvailable) return;
     const useBio = await AsyncStorage.getItem("useBiometrics");
@@ -89,7 +95,6 @@ export const AuthProvider = ({ children }) => {
     ]);
   };
 
-  // Inicia o login biométrico
   const initBiometric = async () => {
     const compatible = await LocalAuthentication.hasHardwareAsync();
     const enrolled = await LocalAuthentication.isEnrolledAsync();
@@ -101,16 +106,13 @@ export const AuthProvider = ({ children }) => {
       const success = await handleBiometricAuth();
       if (success) {
         const savedUid = await AsyncStorage.getItem("uid");
-        if (savedUid) {
-          setUser({ uid: savedUid }); // Atualiza o contexto
-        }
+        if (savedUid) setUser({ uid: savedUid });
         return true;
       }
     }
     return false;
   };
 
-  // Fluxo biométrico (local)
   const handleBiometricAuth = async () => {
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: "Login com biometria",
@@ -119,14 +121,12 @@ export const AuthProvider = ({ children }) => {
     return result.success;
   };
 
-  // Login normal com Firebase
   const login = async (email, senha) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, senha);
     const currentUser = userCredential.user;
 
     setUser({ uid: currentUser.uid, email: currentUser.email });
 
-    // Salva UID para uso futuro com biometria
     await AsyncStorage.setItem("uid", currentUser.uid);
 
     return currentUser;
@@ -142,7 +142,8 @@ export const AuthProvider = ({ children }) => {
         promptEnableBiometrics, 
         initBiometric, 
         setUser,
-        login
+        login,
+        logout,  
       }}
     >
       {children}
