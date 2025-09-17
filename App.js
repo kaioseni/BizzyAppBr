@@ -1,3 +1,4 @@
+// App.js
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
@@ -19,22 +20,26 @@ const Loading = () => (
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [viewOnboarding, setViewOnboarding] = useState(false);
-
-  const checkOnboarding = async () => {
-    try {
-      const value = await AsyncStorage.getItem("@viewedOnboarding");
-      if (value !== null) {
-        setViewOnboarding(true);
-      }
-    } catch (err) {
-      console.log("Error @checkOnboarding: ", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [lockEnabled, setLockEnabled] = useState(false);
 
   useEffect(() => {
-    checkOnboarding();
+    const initApp = async () => {
+      try {
+        // Check onboarding
+        const onboarding = await AsyncStorage.getItem("@viewedOnboarding");
+        if (onboarding !== null) setViewOnboarding(true);
+
+        // Check biometrics
+        const useBio = await AsyncStorage.getItem("useBiometrics");
+        if (useBio === "true") setLockEnabled(true);
+      } catch (err) {
+        console.log("Erro ao inicializar app:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initApp();
   }, []);
 
   if (loading) return <Loading />;
@@ -53,7 +58,10 @@ export default function App() {
                     style={theme === "dark" ? "light" : "dark"}
                     backgroundColor={currentTheme.background}
                   />
-                  <AppRoutes viewOnboarding={viewOnboarding} />
+                  <AppRoutes
+                    viewOnboarding={viewOnboarding}
+                    lockEnabled={lockEnabled}
+                  />
                   <Toast config={getToastConfig(currentTheme)} />
                 </>
               );

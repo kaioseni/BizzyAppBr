@@ -1,7 +1,9 @@
+// routes/AppRoutes.js
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useContext } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
+import LockScreen from "../screens/LockScreen";
 import LoginScreen from "../screens/LoginScreen";
 import OnboardingCarousel from "../onboarding/OnboardingCarousel";
 import Register from "../screens/Register";
@@ -23,13 +25,19 @@ import ThemeSettingsScreen from "../screens/ThemeSettingsScreen";
 
 const Stack = createNativeStackNavigator();
 
-export default function AppRoutes({ viewOnboarding }) {
+export default function AppRoutes({ viewOnboarding, lockEnabled }) {
   const { theme } = useContext(ThemeContext);
   const currentTheme = theme === "dark" ? darkTheme : lightTheme;
 
   return (
     <Stack.Navigator
-      initialRouteName={viewOnboarding ? "LoginScreen" : "OnboardingCarousel"}
+      initialRouteName={
+        lockEnabled
+          ? "LockScreen"
+          : viewOnboarding
+          ? "LoginScreen"
+          : "OnboardingCarousel"
+      }
       screenOptions={{
         headerStyle: { backgroundColor: currentTheme.background },
         headerTintColor: currentTheme.text,
@@ -37,6 +45,7 @@ export default function AppRoutes({ viewOnboarding }) {
       }}
     >
       <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} options={{ headerShown: false }} />
+      <Stack.Screen name="LockScreen" component={LockScreen} options={{ headerShown: false }} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Register" component={Register} options={{ title: "Cadastrar Empresa" }} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: "", headerShown: true }} />
