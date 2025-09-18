@@ -1,73 +1,72 @@
 import React, { createContext, useState, useEffect } from "react";
 import { auth, db } from "../firebase/firebaseConfig";
-import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut as firebaseSignOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, deleteUser, signInWithEmailAndPassword, signOut as firebaseSignOut } from "firebase/auth";
 import { doc, setDoc, collection } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import * as LocalAuthentication from 'expo-local-authentication';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 import { Alert } from "react-native";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const storage = getStorage();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
- 
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser({ uid: currentUser.uid, email: currentUser.email });
-      } else {
-        setUser(null);
-      }
+      setUser(currentUser ? { uid: currentUser.uid, email: currentUser.email } : null);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
- 
-  const uploadImageAsync = async (uri, path) => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, blob);
-    return await getDownloadURL(storageRef);
-  };
- 
-  const register = async (email, password, extraData) => {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
-    await setDoc(doc(db, "users", user.uid), { email, createdAt: new Date() });
+  const register = async (email, password, extraData, uploadImageFn) => {
+    let user;
+    try {
+      
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      user = userCredential.user;
+      
+      let logoUrl = null;
+      if (extraData.logo && uploadImageFn) {
+        try {
+          logoUrl = await uploadImageFn(extraData.logo);
+        } catch (err) {
+          await deleteUser(user);  
+          throw new Error("Falha ao enviar logotipo: " + err.message);
+        }
+      }
+     
+      await setDoc(doc(db, "users", user.uid), { email, createdAt: new Date() });
 
-    let logoUrl = null;
-    if (extraData.logo) {
-      const fileName = `${Date.now()}_${extraData.nomeEstabelecimento}.jpg`;
-      logoUrl = await uploadImageAsync(extraData.logo, `logos/${fileName}`);
+      await setDoc(doc(collection(db, "estabelecimentos"), user.uid), {
+        userId: user.uid,
+        nomeEstabelecimento: extraData.nomeEstabelecimento,
+        telefone: extraData.telefone,
+        cep: extraData.cep,
+        logradouro: extraData.logradouro,
+        bairro: extraData.bairro,
+        cidade: extraData.cidade,
+        estado: extraData.estado,
+        numero: extraData.numero,
+        complemento: extraData.complemento,
+        logo: logoUrl,
+        ramoAtividade: extraData.ramoAtividade,
+        createdAt: new Date(),
+      });
+
+      return user;
+    } catch (error) {
+      if (user) {
+        try { await deleteUser(user); } catch (e) { console.warn("Erro ao deletar usuário parcialmente criado:", e); }
+      }
+      throw error;
     }
-
-    await setDoc(doc(collection(db, "estabelecimentos"), user.uid), {
-      userId: user.uid,
-      nomeEstabelecimento: extraData.nomeEstabelecimento,
-      telefone: extraData.telefone,
-      cep: extraData.cep,
-      logradouro: extraData.logradouro,
-      bairro: extraData.bairro,
-      cidade: extraData.cidade,
-      estado: extraData.estado,
-      numero: extraData.numero,
-      complemento: extraData.complemento,
-      logo: logoUrl,
-      ramoAtividade: extraData.ramoAtividade,
-      createdAt: new Date(),
-    });
-
-    return user;
   };
 
   const resetPassword = async (email) => sendPasswordResetEmail(auth, email);
-  
+
   const logout = async () => {
     try {
       await firebaseSignOut(auth);
@@ -77,7 +76,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.log("Erro ao sair:", error);
     }
-  }; 
+  };
+
   const promptEnableBiometrics = async (uid) => {
     if (!biometricAvailable) return;
     const useBio = await AsyncStorage.getItem("useBiometrics");
@@ -85,12 +85,12 @@ export const AuthProvider = ({ children }) => {
 
     Alert.alert("Autenticação biométrica", "Deseja usar sua biometria para futuros logins?", [
       { text: "Agora não", style: "cancel" },
-      { 
-        text: "Sim", 
+      {
+        text: "Sim",
         onPress: async () => {
           await AsyncStorage.setItem("useBiometrics", "true");
           await AsyncStorage.setItem("uid", uid);
-        } 
+        }
       }
     ]);
   };
@@ -124,26 +124,23 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, senha) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, senha);
     const currentUser = userCredential.user;
-
     setUser({ uid: currentUser.uid, email: currentUser.email });
-
     await AsyncStorage.setItem("uid", currentUser.uid);
-
     return currentUser;
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        loading, 
-        register, 
-        resetPassword, 
-        promptEnableBiometrics, 
-        initBiometric, 
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        register,
+        resetPassword,
+        promptEnableBiometrics,
+        initBiometric,
         setUser,
         login,
-        logout,  
+        logout,
       }}
     >
       {children}

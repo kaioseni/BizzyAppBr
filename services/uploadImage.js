@@ -20,3 +20,4 @@ const uploadImageToCloudinary = async (fotoUri) => {
     throw err;
   }
 };
+

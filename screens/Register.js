@@ -12,6 +12,9 @@ import { db } from "../firebase/firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import { buscarEnderecoPorCEP } from "../services/cep";
 
+const CLOUDINARY_CLOUD_NAME = "dol0wheky";
+const CLOUDINARY_UPLOAD_PRESET = "colaboradores";
+
 const { width, height } = Dimensions.get("window");
 
 export default function Register({ navigation }) {
@@ -50,9 +53,9 @@ export default function Register({ navigation }) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1],
       quality: 0.7,
     });
+    console.log("1 ", result)
     if (!result.canceled) setLogo(result.assets[0].uri);
   };
 
@@ -87,41 +90,50 @@ export default function Register({ navigation }) {
     return true;
   };
 
-  const handleRegister = async () => {
-    if (!validateFields()) return;
+  const uploadImageToCloudinary = async (logoUri) => {
+  const formData = new FormData();
+  formData.append("file", { uri: logoUri, type: "image/jpeg", name: "logo.jpg" });
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
-    setLoadingRegister(true);
-    try {
-      await register(email, password, {
-        nomeEstabelecimento,
-        telefone,
-        logo,
-        ramoAtividade,
-        ...endereco,
-      });
-      showToast("success", "Sucesso!", "Usuário criado com sucesso 🎉");
-      await promptEnableBiometrics();
-      navigation.navigate("MainTabs", { screen: "Home" });
-    } catch (error) {
-      let message = "Ocorreu um erro no cadastro.";
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          message = "Este e-mail já está em uso.";
-          break;
-        case "auth/invalid-email":
-          message = "E-mail inválido.";
-          break;
-        case "auth/password-does-not-meet-requirements":
-          message = "A senha não atende os critérios mínimos.";
-          break;
-        default:
-          message = error.message;
-      }
-      showToast("error", "Erro no cadastro", message);
-    } finally {
-      setLoadingRegister(false);
-    }
-  };
+  try {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error(JSON.stringify(data));
+    return data.secure_url;
+  } catch (err) {
+    console.error("Erro upload Cloudinary:", err);
+    throw err;
+  }
+};
+
+const handleRegister = async () => {
+  if (!validateFields()) return;
+  setLoadingRegister(true);
+
+  try {
+    await register(email, password, {
+      nomeEstabelecimento,
+      telefone,
+      logo,
+      ramoAtividade,
+      ...endereco,
+    }, uploadImageToCloudinary);
+
+    showToast("success", "Sucesso!", "Usuário criado com sucesso 🎉");
+    await promptEnableBiometrics();
+    navigation.navigate("MainTabs", { screen: "Home" });
+
+  } catch (error) {
+    const message = error.message || "Erro no cadastro.";
+    showToast("error", "Erro no cadastro", message);
+    console.error("Erro handleRegister:", error);
+  } finally {
+    setLoadingRegister(false);
+  }
+};
 
   useEffect(() => {
     const fetchRamos = async () => {
@@ -238,9 +250,9 @@ export default function Register({ navigation }) {
           />
           <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
             {showPassword ? (
-              <Eye size={20} color="#3498db" /> 
+              <Eye size={20} color="#3498db" />
             ) : (
-              <EyeOff size={20} color="#3498db" /> 
+              <EyeOff size={20} color="#3498db" />
             )}
           </TouchableOpacity>
         </View>
