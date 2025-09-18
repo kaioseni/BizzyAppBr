@@ -2,19 +2,21 @@ import { useEffect, useState, useContext } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator, Image, FlatList } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
-import { doc, getDoc, updateDoc, collection, onSnapshot, getDocs } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, getDoc, updateDoc, collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { fetchServicosRamoRealtime, fetchServicosImportadosRealtime, fetchServicosPersonalizadosRealtime, fetchRamoUsuario } from "../services/servicesService";
 import { CheckSquare, Square, Layers, Download, Edit3, User as UserIcon } from "lucide-react-native";
 import { ThemeContext } from "../contexts/ThemeContext";
 
+const CLOUDINARY_CLOUD_NAME = "dol0wheky";
+const CLOUDINARY_UPLOAD_PRESET = "colaboradores";
+
 const { width } = Dimensions.get("window");
-const storage = getStorage();
 
 export default function EditCollaboratorScreen({ route, navigation }) {
   const { collaboratorId } = route.params;
   const { theme } = useContext(ThemeContext);
+
   const colors = theme === "dark"
     ? { background: "#121212", text: "#f5f5f5", card: "#1e1e1e", border: "#444" }
     : { background: "#fff", text: "#333", card: "#f9f9f9", border: "#ddd" };
@@ -105,14 +107,14 @@ export default function EditCollaboratorScreen({ route, navigation }) {
     });
     unsubscribes.push(unsubPersonalizados);
 
-    const unsubImportados = fetchServicosImportadosRealtime(collaboratorId, importados => {
+    const unsubImportados = fetchServicosImportadosRealtime(idEstabelecimento, importados => {
       servicosImportadosTemp.length = 0;
       servicosImportadosTemp.push(...importados);
       mergeAllServicos();
     });
     unsubscribes.push(unsubImportados);
 
-    const unsubCriados = onSnapshot(collection(db, "users", collaboratorId, "servicosCriados"), snapshot => {
+    const unsubCriados = onSnapshot(collection(db, "users", idEstabelecimento, "servicosCriados"), snapshot => {
       servicosCriadosTemp.length = 0;
       servicosCriadosTemp.push(...snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       mergeAllServicos();
@@ -135,15 +137,26 @@ export default function EditCollaboratorScreen({ route, navigation }) {
       allowsEditing: true,
       quality: 0.7,
     });
+    console.log("1 ", result)
     if (!result.canceled) setFoto(result.assets[0].uri);
   };
 
-  const uploadImage = async (uri, path) => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, blob);
-    return await getDownloadURL(storageRef);
+  const uploadImageToCloudinary = async (fotoUri) => {
+    const formData = new FormData();
+    formData.append("file", { uri: fotoUri, type: "image/jpeg", name: "foto.jpg" });
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      return data.secure_url;
+    } catch (err) {
+      console.error("Erro upload Cloudinary:", err);
+      throw err;
+    }
   };
 
   const handleSave = async () => {
@@ -151,12 +164,29 @@ export default function EditCollaboratorScreen({ route, navigation }) {
       Toast.show({ type: "error", text1: "O nome não pode ser vazio" });
       return;
     }
+
     setSaving(true);
 
     try {
+
       let fotoUrl = foto;
-      if (foto && foto.startsWith("file:")) {
-        fotoUrl = await uploadImage(foto, `colaboradores/${collaboratorId}.jpg`);
+      console.log("2", fotoUrl)
+
+      if (foto && typeof foto === "string") {
+
+        if (foto.startsWith("file:")) {
+          try {
+            const uploadedUrl = await uploadImageToCloudinary(foto);
+            fotoUrl = uploadedUrl || null;
+          } catch (err) {
+            console.error("Erro ao enviar imagem:", err);
+            Toast.show({ type: "error", text1: "Erro ao enviar imagem" });
+            setSaving(false);
+            return;
+          }
+        } else {
+          fotoUrl = foto;
+        }
       }
 
       const preferenciasSelecionadas = servicos
@@ -172,8 +202,8 @@ export default function EditCollaboratorScreen({ route, navigation }) {
       Toast.show({ type: "success", text1: "Colaborador atualizado" });
       navigation.goBack();
     } catch (error) {
-      console.error(error);
-      Toast.show({ type: "error", text1: "Erro ao atualizar colaborador" });
+      console.error("Erro ao atualizar colaborador:", error);
+      Toast.show({ type: "error", text1: "Erro ao atualizar colaborador", text2: error.message });
     } finally {
       setSaving(false);
     }
@@ -252,10 +282,7 @@ export default function EditCollaboratorScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: width * 0.05
-  },
+  container: { flex: 1, padding: width * 0.05 },
   label: {
     fontSize: width * 0.04,
     marginBottom: 8,
@@ -270,7 +297,8 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#329de4",
-    padding: 15, borderRadius: 8,
+    padding: 15,
+    borderRadius: 8,
     alignItems: "center"
   },
   buttonText: {
@@ -286,7 +314,8 @@ const styles = StyleSheet.create({
   imageWrapper: {
     alignSelf: "center",
     marginBottom: 20,
-    width: 120, height: 120,
+    width: 120,
+    height: 120,
     borderRadius: 60,
     justifyContent: "center",
     alignItems: "center",
@@ -304,10 +333,7 @@ const styles = StyleSheet.create({
   },
   servicoNome: { fontSize: 15, fontWeight: "600" },
   servicoDescricao: { fontSize: 13, marginTop: 2 },
-  labelContainer: {
-    flexDirection: "row",
-    marginTop: 6
-  },
+  labelContainer: { flexDirection: "row", marginTop: 6 },
   label: {
     flexDirection: "row",
     alignItems: "center",
