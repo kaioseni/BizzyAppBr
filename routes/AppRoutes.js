@@ -1,4 +1,3 @@
-// routes/AppRoutes.js
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useContext } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
@@ -22,47 +21,54 @@ import EditServiceScreen from "../screens/EditServiceScreen";
 import ManageServiceScreen from "../screens/ManageServiceScreen";
 import FinishedScreen from "../screens/FinishedScreen";
 import ThemeSettingsScreen from "../screens/ThemeSettingsScreen";
+import { StatusBar } from "react-native";
 
 const Stack = createNativeStackNavigator();
 
 export default function AppRoutes({ viewOnboarding, lockEnabled }) {
-  const { theme } = useContext(ThemeContext);
-  const currentTheme = theme === "dark" ? darkTheme : lightTheme;
+  const { effectiveTheme } = useContext(ThemeContext);
+  const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
   return (
-    <Stack.Navigator
-      initialRouteName={
-        lockEnabled
-          ? "LockScreen"
-          : viewOnboarding
-          ? "LoginScreen"
-          : "OnboardingCarousel"
-      }
-      screenOptions={{
-        headerStyle: { backgroundColor: currentTheme.background },
-        headerTintColor: currentTheme.text,
-        contentStyle: { backgroundColor: currentTheme.background },
-      }}
-    >
-      <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} options={{ headerShown: false }} />
-      <Stack.Screen name="LockScreen" component={LockScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={Register} options={{ title: "Cadastrar Empresa" }} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: "", headerShown: true }} />
-      <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="AppointmentsScreen" component={AppointmentsScreen} options={{ title: "Novo Agendamento" }} />
-      <Stack.Screen name="About" component={AboutScreen} options={{ title: "" }} />
-      <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil do Estabelecimento" }} />
-      <Stack.Screen name="CollaboratorsScreen" component={CollaboratorsScreen} options={{ title: "Colaboradores" }} />
-      <Stack.Screen name="CreateCollaboratorScreen" component={CreateCollaboratorScreen} options={{ title: "Novo Colaborador" }} />
-      <Stack.Screen name="EditCollaboratorScreen" component={EditCollaboratorScreen} options={{ title: "Editar colaborador" }} />
-      <Stack.Screen name="ClientsScreen" component={ClientsScreen} options={{ title: "Relatório de Clientes" }} />
-      <Stack.Screen name="ServicesScreen" component={ServiceScreen} options={{ title: "Tipos de Serviços" }} />
-      <Stack.Screen name="CreateServiceScreen" component={CreateServiceScreen} options={{ title: "Novo Tipo de Serviço" }} />
-      <Stack.Screen name="EditServiceScreen" component={EditServiceScreen} options={{ title: "Editar Serviço" }} />
-      <Stack.Screen name="ManageService" component={ManageServiceScreen} options={{ title: "Editar Agendamento" }} />
-      <Stack.Screen name="FinishedScreen" component={FinishedScreen} options={{ title: "Agendamentos Finalizados" }} />
-      <Stack.Screen name="ThemeSettingsScreen" component={ThemeSettingsScreen} options={{ title: "Tema do Aplicativo" }} />
-    </Stack.Navigator>
+    <>
+      <StatusBar
+        barStyle={effectiveTheme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor={currentTheme.background}
+      />
+      <Stack.Navigator
+        initialRouteName={
+          lockEnabled
+            ? "LockScreen"
+            : viewOnboarding
+              ? "LoginScreen"
+              : "OnboardingCarousel"
+        }
+        screenOptions={{
+          headerStyle: { backgroundColor: currentTheme.background },
+          headerTintColor: effectiveTheme === "dark" ? "#FFFFFF" : "#000000",
+          contentStyle: { backgroundColor: currentTheme.background },
+        }}
+      >
+        <Stack.Screen name="OnboardingCarousel" component={OnboardingCarousel} options={{ headerShown: false }} />
+        <Stack.Screen name="LockScreen" component={LockScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={Register} options={{ title: "Cadastrar Empresa" }} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: "", headerShown: true }} />
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+        <Stack.Screen name="AppointmentsScreen" component={AppointmentsScreen} options={{ title: "Novo Agendamento" }} />
+        <Stack.Screen name="About" component={AboutScreen} options={{ title: "Sobre o App" }} />
+        <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil do Estabelecimento" }} />
+        <Stack.Screen name="CollaboratorsScreen" component={CollaboratorsScreen} options={{ title: "Colaboradores" }} />
+        <Stack.Screen name="CreateCollaboratorScreen" component={CreateCollaboratorScreen} options={{ title: "Novo Colaborador" }} />
+        <Stack.Screen name="EditCollaboratorScreen" component={EditCollaboratorScreen} options={{ title: "Editar colaborador" }} />
+        <Stack.Screen name="ClientsScreen" component={ClientsScreen} options={{ title: "Relatório de Clientes" }} />
+        <Stack.Screen name="ServicesScreen" component={ServiceScreen} options={{ title: "Tipos de Serviços" }} />
+        <Stack.Screen name="CreateServiceScreen" component={CreateServiceScreen} options={{ title: "Novo Tipo de Serviço" }} />
+        <Stack.Screen name="EditServiceScreen" component={EditServiceScreen} options={{ title: "Editar Serviço" }} />
+        <Stack.Screen name="ManageService" component={ManageServiceScreen} options={{ title: "Editar Agendamento" }} />
+        <Stack.Screen name="FinishedScreen" component={FinishedScreen} options={{ title: "Agendamentos Finalizados" }} />
+        <Stack.Screen name="ThemeSettingsScreen" component={ThemeSettingsScreen} options={{ title: "Tema do Aplicativo" }} />
+      </Stack.Navigator>
+    </>
   );
 }

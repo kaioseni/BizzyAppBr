@@ -15,9 +15,9 @@ const { width, height } = Dimensions.get("window");
 export default function FinishedScreen() {
   const navigation = useNavigation();
   const { user, loading } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
+  const { effectiveTheme } = useContext(ThemeContext);
 
-  const colors = theme === "dark"
+  const colors = effectiveTheme === "dark"
     ? { background: "#121212", text: "#fff", card: "#1f1f1f", primary: "#329de4", secondary: "#329de4", placeholder: "#888" }
     : { background: "#fff", text: "#333", card: "#f9f9f9", primary: "#329de4", secondary: "#329de4", placeholder: "#777" };
 
@@ -264,10 +264,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 4
   },
-  colaborador: {
-    fontSize: width * 0.038,
-    fontWeight: "500"
-  },
+  colaborador: { fontSize: width * 0.038, fontWeight: "500" },
   card: {
     padding: width * 0.04,
     borderRadius: 12,
@@ -294,14 +291,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: height * 0.6
   },
-  emptyText: {
-    fontSize: width * 0.045,
-    textAlign: "center"
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
+  emptyText: { fontSize: width * 0.045, textAlign: "center" },
+  buttonRow: { flexDirection: "row", justifyContent: "space-between" },
   shareButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -316,11 +307,7 @@ const styles = StyleSheet.create({
     fontWeight: "500"
   },
   modalContainer: { flex: 1, padding: 16 },
-  modalTitle: {
-    fontSize: width * 0.045,
-    fontWeight: "600",
-    marginBottom: 8
-  },
+  modalTitle: { fontSize: width * 0.045, fontWeight: "600", marginBottom: 8 },
   modalInfo: { fontSize: width * 0.038, marginBottom: 8 },
   modalInput: {
     borderWidth: 1,

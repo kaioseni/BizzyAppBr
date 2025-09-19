@@ -3,14 +3,16 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Ima
 import { AuthContext } from "../contexts/AuthContext";
 import * as LocalAuthentication from 'expo-local-authentication';
 import { ThemeContext } from "../contexts/ThemeContext";
-import { lightTheme, darkTheme } from "../utils/themes";
 
 const { width, height } = Dimensions.get("window");
 
 export default function LockScreen({ navigation }) {
   const { initBiometric } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const currentTheme = theme === "dark" ? darkTheme : lightTheme;
+  const { effectiveTheme } = useContext(ThemeContext);  
+
+  const colors = effectiveTheme === "dark"
+    ? { background: "#121212", text: "#fff", card: "#1f1f1f", button: "#329de4" }
+    : { background: "#fff", text: "#333", card: "#f9f9f9", button: "#329de4" };
 
   const [loading, setLoading] = useState(true);
 
@@ -41,27 +43,27 @@ export default function LockScreen({ navigation }) {
   };
 
   if (loading) return (
-    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <ActivityIndicator size="large" color={currentTheme.text} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ActivityIndicator size="large" color={colors.text} />
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.centerContent}>
         <Image 
           source={require("../assets/LOGO_BIZZYAPP_ICON_ID_1.png")}
           style={[styles.logo, { width: width * 0.4, height: width * 0.4 }]}
           resizeMode="contain"
         />
-        <Text style={[styles.text, { color: currentTheme.text, fontSize: width * 0.05 }]}>
+        <Text style={[styles.text, { color: colors.text, fontSize: width * 0.05 }]}>
           Desbloqueie o app
         </Text>
       </View>
 
       <View style={styles.bottomContent}>
         <TouchableOpacity 
-          style={[styles.button, { paddingVertical: height * 0.02, minWidth: width * 0.5 }]} 
+          style={[styles.button, { paddingVertical: height * 0.02, minWidth: width * 0.5, backgroundColor: colors.button }]} 
           onPress={fallbackToPassword}
         >
           <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
@@ -100,7 +102,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   button: { 
-    backgroundColor: "#2196F3", 
     borderRadius: 10, 
     alignItems: "center",
   },

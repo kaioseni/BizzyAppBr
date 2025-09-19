@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Modal, BackHandler } from "react-native";
+import { 
+  View, Text, FlatList, StyleSheet, TouchableOpacity, 
+  Dimensions, Modal, BackHandler 
+} from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Plus, Calendar, User } from "lucide-react-native";
 import dayjs from "dayjs";
@@ -8,8 +11,10 @@ import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
 import { db } from "../firebase/firebaseConfig";
-import { collection, query, where, orderBy, Timestamp, onSnapshot, getDoc, getDocs, doc } from "firebase/firestore";
-
+import { 
+  collection, query, where, orderBy, Timestamp, 
+  onSnapshot, getDoc, getDocs, doc 
+} from "firebase/firestore";
 
 const { width, height } = Dimensions.get("window");
 const APP_BLUE = "#329de4";
@@ -17,8 +22,9 @@ const APP_BLUE = "#329de4";
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { user, loading } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const currentTheme = theme === "dark" ? darkTheme : lightTheme;
+ 
+  const { effectiveTheme } = useContext(ThemeContext);
+  const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
   const [agendamentos, setAgendamentos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
@@ -68,7 +74,7 @@ export default function HomeScreen() {
       all.sort((a, b) => {
         const aFav = temp.favoritos.has(a.id);
         const bFav = temp.favoritos.has(b.id);
-        return aFav === bFav ? 0 : aFav ? -1 : 1;
+        return aFav === bFav ? -1 : bFav ? 1 : 0;
       });
 
       setServicos(all);
@@ -82,7 +88,9 @@ export default function HomeScreen() {
         const { ramoAtividade } = estSnap.data();
         if (!ramoAtividade) return;
 
-        const padraoSnap = await getDocs(collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns"));
+        const padraoSnap = await getDocs(
+          collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns")
+        );
         temp.padrao = padraoSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         mergeServicos();
 
@@ -161,11 +169,16 @@ export default function HomeScreen() {
     return agendamentoTime.isBefore(dayjs());
   };
 
-  if (loading) return <Text style={[styles.loadingText, { color: currentTheme.text }]}>Carregando usuário...</Text>;
+  if (loading) {
+    return (
+      <Text style={[styles.loadingText, { color: currentTheme.text }]}>
+        Carregando usuário...
+      </Text>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-
       <TouchableOpacity
         style={[styles.dateButton, { backgroundColor: APP_BLUE }]}
         onPress={() => setShowPicker(true)}
@@ -206,7 +219,9 @@ export default function HomeScreen() {
                     ? dayjs(item.dataHora).format("HH:mm")
                     : dayjs(item.dataHora.toDate()).format("HH:mm")}
                 </Text>
-                <Text style={[styles.name, { color: currentTheme.text }]}>{item.nomeCliente}</Text>
+                <Text style={[styles.name, { color: currentTheme.text }]}>
+                  {item.nomeCliente}
+                </Text>
               </View>
 
               {item.servico && (
@@ -218,18 +233,24 @@ export default function HomeScreen() {
               {item.colaborador && (
                 <View style={styles.colaboradorWrapper}>
                   <User size={14} color={APP_BLUE} style={{ marginRight: 6 }} />
-                  <Text style={[styles.colaborador, { color: APP_BLUE }]}>{item.colaborador}</Text>
+                  <Text style={[styles.colaborador, { color: APP_BLUE }]}>
+                    {item.colaborador}
+                  </Text>
                 </View>
               )}
 
-              <Text style={[styles.phone, { color: currentTheme.text }]}>{item.telefone}</Text>
+              <Text style={[styles.phone, { color: currentTheme.text }]}>
+                {item.telefone}
+              </Text>
             </TouchableOpacity>
           );
         }}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: currentTheme.text }]}>Nenhum agendamento para este dia</Text>
+            <Text style={[styles.emptyText, { color: currentTheme.text }]}>
+              Nenhum agendamento para este dia
+            </Text>
           </View>
         }
       />
@@ -260,12 +281,13 @@ export default function HomeScreen() {
               <Text style={styles.modalButtonText}>Sair</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setExitModalVisible(false)}>
-              <Text style={[styles.cancelText, { color: currentTheme.text }]}>Agora Não</Text>
+              <Text style={[styles.cancelText, { color: currentTheme.text }]}>
+                Agora Não
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }

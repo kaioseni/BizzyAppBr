@@ -10,8 +10,9 @@ const APP_BLUE = "#329de4";
 
 export default function ProfileScreen() {
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const currentTheme = theme === "dark"
+  const { effectiveTheme } = useContext(ThemeContext);
+
+  const currentTheme = effectiveTheme === "dark"
     ? { background: "#121212", card: "#1e1e1e", text: "#fff", textSecondary: "#ccc" }
     : { background: "#fff", card: "#f9f9f9", text: "#333", textSecondary: "#555" };
 
@@ -76,26 +77,26 @@ export default function ProfileScreen() {
       )}
 
       <Text style={[styles.title, { color: APP_BLUE }]}>{estabelecimento.nomeEstabelecimento}</Text>
-      <Text style={[styles.subtitle, { color: currentTheme.textSecondary }]}>
+      <Text style={[styles.subtitle, { color: currentTheme.text }]}>
         {estabelecimento.ramoAtividade}
       </Text>
 
       <View style={[styles.infoCard, { backgroundColor: currentTheme.card }]}>
         <Text style={[styles.label, { color: currentTheme.text }]}>Telefone:</Text>
-        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>{estabelecimento.telefone}</Text>
+        <Text style={[styles.value, { color: currentTheme.text }]}>{estabelecimento.telefone}</Text>
 
         <Text style={[styles.label, { color: currentTheme.text }]}>Endereço:</Text>
-        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>
+        <Text style={[styles.value, { color: currentTheme.text }]}>
           {estabelecimento.logradouro}, {estabelecimento.numero}{" "}
           {estabelecimento.complemento ? `- ${estabelecimento.complemento}` : ""}
         </Text>
-        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>
+        <Text style={[styles.value, { color: currentTheme.text }]}>
           {estabelecimento.bairro}, {estabelecimento.cidade} - {estabelecimento.estado}
         </Text>
-        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>CEP: {estabelecimento.cep}</Text>
+        <Text style={[styles.value, { color: currentTheme.text }]}>CEP: {estabelecimento.cep}</Text>
 
         <Text style={[styles.label, { color: currentTheme.text }]}>Criado em:</Text>
-        <Text style={[styles.value, { color: currentTheme.textSecondary }]}>
+        <Text style={[styles.value, { color: currentTheme.text }]}>
           {estabelecimento.createdAt?.toDate
             ? estabelecimento.createdAt.toDate().toLocaleString("pt-BR")
             : ""}

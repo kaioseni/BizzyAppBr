@@ -1,28 +1,34 @@
 import { useContext } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
+import { ScrollView, Text, StyleSheet, Dimensions } from "react-native";
 import { ThemeContext } from "../contexts/ThemeContext";
+import { lightTheme, darkTheme } from "../utils/themes";
 
 const { width } = Dimensions.get("window");
 
 export default function AboutScreen() {
-  const { theme } = useContext(ThemeContext);
-
-  const currentTheme = theme === "dark"
-    ? { background: "#121212", text: "#fff", textSecondary: "#ccc", primary: "#329de4" }
-    : { background: "#fff", text: "#333", textSecondary: "#555", primary: "#329de4" };
+  const { effectiveTheme } = useContext(ThemeContext);
+  const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <Text style={[styles.title, { color: currentTheme.primary }]}>Sobre o BizzyApp</Text>
+    <ScrollView
+      contentContainerStyle={[styles.container, { backgroundColor: currentTheme.background }]}
+    >
+      <Text style={[styles.title, { color: currentTheme.primary }]}>
+        Sobre o BizzyApp
+      </Text>
 
-      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>📌 O que é?</Text>
+      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+        📌 O que é?
+      </Text>
       <Text style={[styles.text, { color: currentTheme.text }]}>
         O BizzyApp é um aplicativo voltado para gestão de agendamentos de pequenas empresas, 
         criado como parte de um trabalho de pós-graduação e em evolução para se tornar um 
         produto completo.
       </Text>
 
-      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>✨ Funcionalidades atuais</Text>
+      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+        ✨ Funcionalidades atuais
+      </Text>
       <Text style={[styles.text, { color: currentTheme.textSecondary }]}>
         - Cadastro e login de usuários com Firebase Authentication {"\n"}
         - Suporte a login via biometria {"\n"}
@@ -33,7 +39,9 @@ export default function AboutScreen() {
         - Integração com Firestore (coleção {"agendamentos"})
       </Text>
 
-      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>🚀 Roadmap</Text>
+      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+        🚀 Roadmap
+      </Text>
       <Text style={[styles.text, { color: currentTheme.textSecondary }]}>
         - Implementar Bottom Tabs (Início + Mais opções) {"\n"}
         - Criar menu de funcionalidades extras na aba "Mais" {"\n"}
@@ -42,7 +50,9 @@ export default function AboutScreen() {
         - Publicar em ambiente de testes (Beta)
       </Text>
 
-      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>👨‍💻 Desenvolvedor</Text>
+      <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
+        👨‍💻 Desenvolvedor
+      </Text>
       <Text style={[styles.text, { color: currentTheme.textSecondary }]}>
         Kaio Bolpeti Seni Serradela {"\n"}
         Desenvolvedor de Aplicativos Móveis
@@ -57,8 +67,8 @@ export default function AboutScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: width * 0.05,
     flexGrow: 1,
+    padding: width * 0.05,
   },
   title: {
     fontSize: width * 0.06,

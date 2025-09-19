@@ -11,8 +11,8 @@ const APP_BLUE = "#329de4";
 
 export default function CollaboratorsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const currentTheme = theme === "dark"
+  const { effectiveTheme } = useContext(ThemeContext);  
+  const currentTheme = effectiveTheme === "dark"
     ? { background: "#121212", card: "#1e1e1e", text: "#fff", textSecondary: "#ccc", border: APP_BLUE }
     : { background: "#fff", card: "#f9f9f9", text: "#333", textSecondary: "#777", border: APP_BLUE };
 
@@ -25,10 +25,7 @@ export default function CollaboratorsScreen({ navigation }) {
     const unsubscribe = listenCollaborators(
       user.uid,
       (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setColaboradores(data);
         setLoading(false);
       },
@@ -53,16 +50,10 @@ export default function CollaboratorsScreen({ navigation }) {
           onPress: async () => {
             try {
               await deleteCollaborator(id);
-              Toast.show({
-                type: "success",
-                text1: "Colaborador removido com sucesso",
-              });
+              Toast.show({ type: "success", text1: "Colaborador removido com sucesso" });
             } catch (error) {
               console.error("Erro ao excluir colaborador:", error);
-              Toast.show({
-                type: "error",
-                text1: "Erro ao excluir colaborador",
-              });
+              Toast.show({ type: "error", text1: "Erro ao excluir colaborador" });
             }
           },
         },
@@ -73,25 +64,17 @@ export default function CollaboratorsScreen({ navigation }) {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: currentTheme.card, borderColor: currentTheme.border }]}
-      onPress={() =>
-        navigation.navigate("EditCollaboratorScreen", {
-          collaboratorId: item.id,
-        })
-      }
+      onPress={() => navigation.navigate("EditCollaboratorScreen", { collaboratorId: item.id })}
     >
       <View style={styles.cardHeader}>
         {item.foto ? (
           <Image source={{ uri: item.foto }} style={styles.avatar} />
         ) : (
-          <View style={[styles.avatarPlaceholder, { backgroundColor: theme === "dark" ? "#2a2a2a" : "#e0f0ff" }]}>
+          <View style={[styles.avatarPlaceholder, { backgroundColor: effectiveTheme === "dark" ? "#2a2a2a" : "#e0f0ff" }]}>
             <User size={24} color={APP_BLUE} />
           </View>
         )}
-        <Text
-          style={[styles.name, { color: currentTheme.text }]}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
+        <Text style={[styles.name, { color: currentTheme.text }]} numberOfLines={1} ellipsizeMode="tail">
           {item.nome}
         </Text>
       </View>

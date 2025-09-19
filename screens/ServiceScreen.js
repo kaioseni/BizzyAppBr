@@ -16,22 +16,11 @@ const { width, height } = Dimensions.get("window");
 
 export default function ServicesScreen({ navigation }) {
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const themeColors = theme === "dark" ? {
-    background: "#121212",
-    text: "#eee",
-    card: "#1f1f1f",
-    primary: "#329de4",
-    subtext: "#ccc",
-    onPrimary: "#fff"
-  } : {
-    background: "#fff",
-    text: "#333",
-    card: "#f9f9f9",
-    primary: "#329de4",
-    subtext: "#555",
-    onPrimary: "#fff"
-  };
+  const { effectiveTheme } = useContext(ThemeContext);
+
+  const colors = effectiveTheme === "dark"
+    ? { background: "#121212", card: "#1E1E1E", text: "#f5f5f5", subtext: "#bbb", primary: "#329de4", onPrimary: "#fff" }
+    : { background: "#fff", card: "#f9f9f9", text: "#333", subtext: "#555", primary: "#329de4", onPrimary: "#fff" };
 
   const [servicos, setServicos] = useState([]);
   const [favoritosIds, setFavoritosIds] = useState(new Set());
@@ -46,12 +35,10 @@ export default function ServicesScreen({ navigation }) {
 
     const init = async () => {
       const ramosDisponiveis = (await fetchRamos()).filter(r => r != null);
-
-      const dropdownItems = [
+      setItemsDropdown([
         { label: "Meus Serviços", value: "meusServicos" },
         ...ramosDisponiveis.map(r => ({ label: r, value: r })),
-      ];
-      setItemsDropdown(dropdownItems);
+      ]);
 
       const ramo = await fetchRamoUsuario(user.uid);
       setRamoUsuario(ramo);
@@ -66,7 +53,6 @@ export default function ServicesScreen({ navigation }) {
     setLoading(true);
 
     const unsubscribes = [];
-
     const servicosPadraoTemp = [];
     const servicosImportadosTemp = [];
     const servicosPersonalizadosTemp = [];
@@ -83,50 +69,41 @@ export default function ServicesScreen({ navigation }) {
     };
 
     if (ramoSelecionado === "meusServicos") {
-      const unsubPadrao = fetchServicosRamoRealtime(ramoUsuario, async (padrao) => {
+      unsubscribes.push(fetchServicosRamoRealtime(ramoUsuario, async (padrao) => {
         const ocultosSnap = await getDocs(collection(db, "users", user.uid, "servicosOcultos"));
         const ocultosIds = new Set(ocultosSnap.docs.map(doc => doc.id));
-
         servicosPadraoTemp.length = 0;
         servicosPadraoTemp.push(...padrao.filter(s => !ocultosIds.has(s.id)));
-
         mergeAllServicos();
-      });
-      unsubscribes.push(unsubPadrao);
+      }));
 
-      const unsubPersonalizados = fetchServicosPersonalizadosRealtime(user.uid, (personalizados) => {
+      unsubscribes.push(fetchServicosPersonalizadosRealtime(user.uid, (personalizados) => {
         servicosPersonalizadosTemp.length = 0;
         servicosPersonalizadosTemp.push(...personalizados);
         mergeAllServicos();
-      });
-      unsubscribes.push(unsubPersonalizados);
+      }));
 
-      const unsubImportados = fetchServicosImportadosRealtime(user.uid, (importados) => {
+      unsubscribes.push(fetchServicosImportadosRealtime(user.uid, (importados) => {
         servicosImportadosTemp.length = 0;
         servicosImportadosTemp.push(...importados);
         mergeAllServicos();
-      });
-      unsubscribes.push(unsubImportados);
+      }));
 
       const servicosCriadosRef = collection(db, "users", user.uid, "servicosCriados");
-      const unsubCriados = onSnapshot(servicosCriadosRef, (snapshot) => {
+      unsubscribes.push(onSnapshot(servicosCriadosRef, (snapshot) => {
         servicosCriadosTemp.length = 0;
         servicosCriadosTemp.push(...snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         mergeAllServicos();
-      });
-      unsubscribes.push(unsubCriados);
-
+      }));
     } else {
-      const unsubRamoExterno = fetchServicosRamoRealtime(ramoSelecionado, (listaExterna) => {
+      unsubscribes.push(fetchServicosRamoRealtime(ramoSelecionado, (listaExterna) => {
         const padraoExterno = listaExterna.map(s => ({ ...s, tipo: "padrao" }));
         setServicos(padraoExterno);
         setLoading(false);
-      });
-      unsubscribes.push(unsubRamoExterno);
+      }));
     }
 
-    const unsubFavoritos = fetchFavoritosRealtime(user.uid, setFavoritosIds);
-    unsubscribes.push(unsubFavoritos);
+    unsubscribes.push(fetchFavoritosRealtime(user.uid, setFavoritosIds));
 
     return () => unsubscribes.forEach(fn => fn && fn());
   }, [user?.uid, ramoSelecionado, ramoUsuario]);
@@ -153,7 +130,6 @@ export default function ServicesScreen({ navigation }) {
                 text2: `"${item.nome}" não aparecerá mais para você.`,
               });
             } catch (error) {
-              console.error("Erro ao remover serviço:", error);
               Toast.show({ type: "error", text1: "Erro ao remover serviço" });
             }
           },
@@ -172,44 +148,23 @@ export default function ServicesScreen({ navigation }) {
       });
       setRamoSelecionado("meusServicos");
     } catch (error) {
-      console.error("Erro ao importar serviço:", error);
       Toast.show({ type: "error", text1: "Erro ao importar serviço" });
     }
   };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: themeColors.card, borderColor: themeColors.primary }]}
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.primary }]}
       onPress={() => navigation.navigate("EditServiceScreen", { servico: item })}
     >
       <View style={styles.cardHeader}>
-        <Text style={[styles.name, { color: themeColors.text }]} numberOfLines={1}>{item.nome}</Text>
-        {item.descricao && <Text style={[styles.descricao, { color: themeColors.subtext }]} numberOfLines={2}>{item.descricao}</Text>}
+        <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.nome}</Text>
+        {item.descricao && <Text style={[styles.descricao, { color: colors.subtext }]} numberOfLines={2}>{item.descricao}</Text>}
         <View style={styles.labelContainer}>
-          {item.tipo === "padrao" && (
-            <View style={[styles.label, { backgroundColor: "#3498db" }]}>
-              <Layers size={14} color="#fff" style={{ marginRight: 4 }} />
-              <Text style={styles.labelText}>Padrão</Text>
-            </View>
-          )}
-          {item.tipo === "importado" && (
-            <View style={[styles.label, { backgroundColor: "#27ae60" }]}>
-              <Download size={14} color="#fff" style={{ marginRight: 4 }} />
-              <Text style={styles.labelText}>Importado</Text>
-            </View>
-          )}
-          {item.tipo === "personalizado" && (
-            <View style={[styles.label, { backgroundColor: "#e67e22" }]}>
-              <Edit3 size={14} color="#fff" style={{ marginRight: 4 }} />
-              <Text style={styles.labelText}>Personalizado</Text>
-            </View>
-          )}
-          {item.tipo === "criado" && (
-            <View style={[styles.label, { backgroundColor: "#8e44ad" }]}>
-              <User size={14} color="#fff" style={{ marginRight: 4 }} />
-              <Text style={styles.labelText}>Criado</Text>
-            </View>
-          )}
+          {item.tipo === "padrao" && <View style={[styles.label, { backgroundColor: "#3498db" }]}><Layers size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Padrão</Text></View>}
+          {item.tipo === "importado" && <View style={[styles.label, { backgroundColor: "#27ae60" }]}><Download size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Importado</Text></View>}
+          {item.tipo === "personalizado" && <View style={[styles.label, { backgroundColor: "#e67e22" }]}><Edit3 size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Personalizado</Text></View>}
+          {item.tipo === "criado" && <View style={[styles.label, { backgroundColor: "#8e44ad" }]}><User size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Criado</Text></View>}
         </View>
       </View>
 
@@ -217,7 +172,7 @@ export default function ServicesScreen({ navigation }) {
         {ramoSelecionado === "meusServicos" ? (
           <>
             <TouchableOpacity onPress={() => toggleFavorito(user.uid, item, favoritosIds.has(item.id))} style={{ marginRight: 12 }}>
-              {favoritosIds.has(item.id) ? <Star size={23} color="#f1c40f" /> : <StarOff size={22} color="#888" />}
+              {favoritosIds.has(item.id) ? <Star size={23} color="#f1c40f" /> : <StarOff size={22} color={colors.subtext} />}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleDelete(item)}>
               <Trash2 size={23} color="red" />
@@ -236,8 +191,8 @@ export default function ServicesScreen({ navigation }) {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      <Text style={[styles.infoText, { color: themeColors.primary }]}>Selecione um Ramo de Atividade para importar outros serviços</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.infoText, { color: colors.primary }]}>Selecione um Ramo de Atividade para importar outros serviços</Text>
 
       {itemsDropdown.length > 0 && ramoSelecionado && (
         <DropDownPicker
@@ -248,33 +203,19 @@ export default function ServicesScreen({ navigation }) {
           setValue={setRamoSelecionado}
           setItems={setItemsDropdown}
           placeholder="Selecione o ramo de atividade"
-          style={[
-            styles.dropdown,
-            {
-              backgroundColor: themeColors.card,
-              borderColor: themeColors.primary
-            }
-          ]}
-          dropDownContainerStyle={[
-            styles.dropdownContainer,
-            {
-              backgroundColor: themeColors.card,
-              borderColor: themeColors.primary
-            }
-          ]}
-          textStyle={{ color: themeColors.text }}
-          labelStyle={{ color: themeColors.text }}
-          placeholderStyle={{ color: themeColors.subtext }}
+          style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.primary }]}
+          dropDownContainerStyle={[styles.dropdownContainer, { backgroundColor: colors.card, borderColor: colors.primary }]}
+          textStyle={{ color: colors.text }}
+          labelStyle={{ color: colors.text }}
+          placeholderStyle={{ color: colors.subtext }}
           listMode="SCROLLVIEW"
         />
       )}
 
-
-      {loading && <ActivityIndicator size="large" color={themeColors.primary} style={{ marginTop: 50 }} />}
-
+      {loading && <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 50 }} />}
       {!loading && servicos.length === 0 && (
         <View style={styles.emptyContainer}>
-          <Text style={[styles.emptyText, { color: themeColors.subtext }]}>Nenhum serviço cadastrado ainda</Text>
+          <Text style={[styles.emptyText, { color: colors.subtext }]}>Nenhum serviço cadastrado ainda</Text>
         </View>
       )}
 
@@ -286,8 +227,8 @@ export default function ServicesScreen({ navigation }) {
       />
 
       {ramoSelecionado === "meusServicos" && (
-        <TouchableOpacity style={[styles.fab, { backgroundColor: themeColors.primary }]} onPress={() => navigation.navigate("CreateServiceScreen")}>
-          <Plus size={28} color={themeColors.onPrimary} />
+        <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate("CreateServiceScreen")}>
+          <Plus size={28} color={colors.onPrimary} />
         </TouchableOpacity>
       )}
     </View>
@@ -316,11 +257,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1
   },
-  cardHeader: {
-    flex: 1,
-    flexShrink: 1,
-    marginRight: 10
-  },
+  cardHeader: { flex: 1, flexShrink: 1, marginRight: 10 },
   name: {
     fontSize: width * 0.045,
     fontWeight: "600",
@@ -331,10 +268,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     maxWidth: width * 0.7
   },
-  labelContainer: {
-    flexDirection: "row",
-    marginTop: 6
-  },
+  labelContainer: { flexDirection: "row", marginTop: 6 },
   label: {
     flexDirection: "row",
     alignItems: "center",
@@ -348,20 +282,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600"
   },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center"
-  },
+  actions: { flexDirection: "row", alignItems: "center" },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     height: height * 0.6
   },
-  emptyText: {
-    fontSize: width * 0.045,
-    textAlign: "center"
-  },
+  emptyText: { fontSize: width * 0.045, textAlign: "center" },
   fab: {
     position: "absolute",
     bottom: width * 0.08,

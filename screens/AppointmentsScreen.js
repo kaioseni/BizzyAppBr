@@ -15,8 +15,8 @@ const APP_BLUE = "#329de4";
 
 export default function AppointmentsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-  const currentTheme = theme === "dark" ? darkTheme : lightTheme;
+  const { effectiveTheme } = useContext(ThemeContext);  
+  const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
   const [nomeCliente, setNomeCliente] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -199,7 +199,7 @@ export default function AppointmentsScreen({ navigation }) {
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <TextInput
         placeholder="Nome do cliente"
-        placeholderTextColor={currentTheme.textSecondary || "#777"}
+        placeholderTextColor={currentTheme.textSecondary}
         value={nomeCliente}
         onChangeText={setNomeCliente}
         style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: currentTheme.border || "#ccc" }]}
@@ -209,7 +209,7 @@ export default function AppointmentsScreen({ navigation }) {
         mask="55 (99) 9 9999-9999"
         keyboardType="phone-pad"
         placeholder="Telefone do cliente"
-        placeholderTextColor={currentTheme.textSecondary || "#777"}
+        placeholderTextColor={currentTheme.textSecondary}
         value={telefone}
         onChangeText={setTelefone}
         style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: currentTheme.border || "#ccc" }]}
@@ -220,11 +220,11 @@ export default function AppointmentsScreen({ navigation }) {
           selectedValue={servicoSelecionado}
           onValueChange={setServicoSelecionado}
           dropdownIconColor={currentTheme.text}
-          style={{ color: servicoSelecionado ? currentTheme.text : currentTheme.textSecondary || "#777" }}
+          style={{ color: servicoSelecionado ? currentTheme.text : currentTheme.textSecondary }}
         >
-          <Picker.Item label="Selecione um serviço" value="" enabled={false} color={currentTheme.textSecondary || "#777"} />
+          <Picker.Item label="Selecione um serviço" value="" enabled={false} color={currentTheme.textSecondary} />
           {servicos.map(s => (
-            <Picker.Item key={`${s.id}-${s.tipo}`} label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`} value={s.id} color={currentTheme.text} />
+            <Picker.Item key={`${s.id}-${s.tipo}`} label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`} value={s.id} color={currentTheme.textDrow} />
           ))}
         </Picker>
       </View>
@@ -234,11 +234,11 @@ export default function AppointmentsScreen({ navigation }) {
           selectedValue={colaboradorSelecionado}
           onValueChange={setColaboradorSelecionado}
           dropdownIconColor={currentTheme.text}
-          style={{ color: colaboradorSelecionado ? currentTheme.text : currentTheme.textSecondary || "#777" }}
+          style={{ color: colaboradorSelecionado ? currentTheme.text : currentTheme.textSecondary }}
         >
-          <Picker.Item label="Selecione um colaborador (opcional)" value="" color={currentTheme.textSecondary || "#777"} />
+          <Picker.Item label="Selecione um colaborador (opcional)" value="" color={currentTheme.textSecondary} />
           {colaboradores.map(c => (
-            <Picker.Item key={c.id} label={c.nome} value={c.nome} color={currentTheme.text} />
+            <Picker.Item key={c.id} label={c.nome} value={c.nome} color={currentTheme.textDrow} />
           ))}
         </Picker>
       </View>
@@ -250,38 +250,34 @@ export default function AppointmentsScreen({ navigation }) {
       {showTimePicker && <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={onTimeChange} />}
 
       <TouchableOpacity style={[styles.btn, { backgroundColor: APP_BLUE }]} onPress={handleAgendar}>
-        <Text style={styles.btnText}>Salvar Agendamento</Text>
+        <Text style={[styles.btnText, { color: "#fff" }]}>Salvar Agendamento</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center"
+  container: { 
+    flex: 1, 
+    padding: 20, 
+    justifyContent: "center" 
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15
+  input: { 
+    borderWidth: 1, 
+    borderRadius: 8, 
+    padding: 12, 
+    marginBottom: 15 
   },
-  pickerWrapper: {
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15
+  pickerWrapper: { 
+    borderWidth: 1, 
+    borderRadius: 8, 
+    marginBottom: 15 
   },
-  btn: {
+  btn: { 
     padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10
+    borderRadius: 8, 
+    alignItems: "center", 
+    marginTop: 10 
   },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16
-  },
+  btnText: { fontWeight: "bold", fontSize: 16 },
 });

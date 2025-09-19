@@ -10,9 +10,9 @@ const { width } = Dimensions.get("window");
 export default function EditServiceScreen({ route, navigation }) {
   const { servico } = route.params;
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
+  const { effectiveTheme } = useContext(ThemeContext);  
 
-  const colors = theme === "dark"
+  const colors = effectiveTheme === "dark"
     ? { background: "#121212", text: "#f5f5f5", card: "#1e1e1e", border: "#444" }
     : { background: "#fff", text: "#333", card: "#f9f9f9", border: "#ccc" };
 
@@ -53,7 +53,7 @@ export default function EditServiceScreen({ route, navigation }) {
         value={nome}
         onChangeText={setNome}
         placeholder="Digite o nome do serviço"
-        placeholderTextColor="#888"
+        placeholderTextColor={colors.text + "88"}  
       />
 
       <Text style={[styles.label, { color: colors.text }]}>Descrição</Text>
@@ -66,12 +66,12 @@ export default function EditServiceScreen({ route, navigation }) {
         value={descricao}
         onChangeText={setDescricao}
         placeholder="Digite a descrição do serviço"
-        placeholderTextColor="#888"
+        placeholderTextColor={colors.text + "88"} 
         multiline
         numberOfLines={4}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSave}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: "#329de4" }]} onPress={handleSave}>
         <Text style={styles.buttonText}>Salvar</Text>
       </TouchableOpacity>
     </View>
@@ -101,7 +101,6 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   button: {
-    backgroundColor: "#329de4",
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",

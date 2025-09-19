@@ -1,17 +1,17 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Home, Settings } from "lucide-react-native";
-import HomeScreen from "../screens/HomeScreen";
-import MoreScreen from "../screens/MoreScreen";
 import { useContext } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
+import HomeScreen from "../screens/HomeScreen";
+import MoreScreen from "../screens/MoreScreen";
 
 const Tab = createBottomTabNavigator();
-const APP_BLUE = "#329de4"; 
+const APP_BLUE = "#329de4";
 
 export default function MainTabs() {
-  const { theme } = useContext(ThemeContext);
-  const currentTheme = theme === "dark" ? darkTheme : lightTheme;
+  const { effectiveTheme } = useContext(ThemeContext);
+  const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
   return (
     <Tab.Navigator
@@ -20,7 +20,7 @@ export default function MainTabs() {
         tabBarActiveTintColor: APP_BLUE,
         tabBarInactiveTintColor: currentTheme.textSecondary || "#777",
         tabBarStyle: {
-          backgroundColor: currentTheme.tabBar || currentTheme.card, 
+          backgroundColor: currentTheme.tabBar || currentTheme.card,
           borderTopWidth: 0,
           elevation: 4,
         },

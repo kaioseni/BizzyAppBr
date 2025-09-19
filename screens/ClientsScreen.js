@@ -11,23 +11,22 @@ const APP_BLUE = "#329de4";
 
 export default function ClientsScreen() {
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
-
-  const currentTheme = theme === "dark"
+  const { effectiveTheme } = useContext(ThemeContext); 
+  const currentTheme = effectiveTheme === "dark"
     ? {
-      background: "#121212",
-      card: "#1e1e1e",
-      text: "#fff",
-      textSecondary: "#ccc",
-      input: "#2a2a2a",
-    }
+        background: "#121212",
+        card: "#1e1e1e",
+        text: "#fff",
+        textSecondary: "#ccc",
+        input: "#2a2a2a",
+      }
     : {
-      background: "#f2f5f7",
-      card: "#fff",
-      text: "#333",
-      textSecondary: "#555",
-      input: "#fff",
-    };
+        background: "#f2f5f7",
+        card: "#fff",
+        text: "#333",
+        textSecondary: "#555",
+        input: "#fff",
+      };
 
   const [agendamentos, setAgendamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -149,7 +148,7 @@ export default function ClientsScreen() {
             style={[
               styles.clientCard,
               {
-                backgroundColor: theme === "dark" ? "#1e1e1e" : "#e6f0fa",
+                backgroundColor: currentTheme.card,
                 borderLeftColor: APP_BLUE,
               },
             ]}

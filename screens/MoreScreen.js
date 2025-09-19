@@ -1,21 +1,18 @@
 import { useContext } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Alert } from "react-native";
 import { User, Wrench, Settings, Users, Info, FileChartColumnIncreasing, BookCheck } from "lucide-react-native";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { AuthContext } from "../contexts/AuthContext";
-import { Alert } from "react-native";
+import { lightTheme, darkTheme } from "../utils/themes";
 
 const { width, height } = Dimensions.get("window");
 const APP_BLUE = "#329de4";
 
 export default function MoreScreen({ navigation }) {
-  const { theme } = useContext(ThemeContext);
+  const { effectiveTheme } = useContext(ThemeContext); 
   const { logout } = useContext(AuthContext);
 
-  const currentTheme =
-    theme === "dark"
-      ? { background: "#121212", card: "#1e1e1e", text: "#fff", textSecondary: "#ccc" }
-      : { background: "#fff", card: "#f5f9ff", text: "#333", textSecondary: "#777" };
+  const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
   const menuItems = [
     { label: "Perfil", icon: User, screen: "Profile" },
@@ -65,6 +62,7 @@ export default function MoreScreen({ navigation }) {
           );
         })}
       </View>
+
       <TouchableOpacity
         style={[styles.logoutButton, { backgroundColor: "#e53935" }]}
         onPress={handleLogoutPress}
@@ -114,24 +112,12 @@ const styles = StyleSheet.create({
     fontWeight: "500", 
     textAlign: "center" 
   },
-  logoutContainer: { 
-    flex: 1, 
-    justifyContent: "flex-end", 
-    marginBottom: 20 
-  },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#e53935",
     paddingVertical: 12,
     borderRadius: 12,
     marginHorizontal: 20,
-  },
-  logoutText: { 
-    color: "#fff", 
-    fontWeight: "bold", 
-    fontSize: width * 0.045, 
-    marginLeft: 8 
   },
 });

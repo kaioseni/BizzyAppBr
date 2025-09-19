@@ -15,18 +15,16 @@ const { width } = Dimensions.get("window");
 
 export default function EditCollaboratorScreen({ route, navigation }) {
   const { collaboratorId } = route.params;
-  const { theme } = useContext(ThemeContext);
+  const { effectiveTheme } = useContext(ThemeContext);  
 
-  const colors = theme === "dark"
+  const colors = effectiveTheme === "dark"
     ? { background: "#121212", text: "#f5f5f5", card: "#1e1e1e", border: "#444" }
     : { background: "#fff", text: "#333", card: "#f9f9f9", border: "#ddd" };
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [nome, setNome] = useState("");
   const [foto, setFoto] = useState(null);
-
   const [idEstabelecimento, setIdEstabelecimento] = useState(null);
   const [ramoUsuario, setRamoUsuario] = useState(null);
   const [servicos, setServicos] = useState([]);
@@ -137,7 +135,6 @@ export default function EditCollaboratorScreen({ route, navigation }) {
       allowsEditing: true,
       quality: 0.7,
     });
-    console.log("1 ", result)
     if (!result.canceled) setFoto(result.assets[0].uri);
   };
 
@@ -146,17 +143,12 @@ export default function EditCollaboratorScreen({ route, navigation }) {
     formData.append("file", { uri: fotoUri, type: "image/jpeg", name: "foto.jpg" });
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      return data.secure_url;
-    } catch (err) {
-      console.error("Erro upload Cloudinary:", err);
-      throw err;
-    }
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    return data.secure_url;
   };
 
   const handleSave = async () => {
@@ -168,25 +160,9 @@ export default function EditCollaboratorScreen({ route, navigation }) {
     setSaving(true);
 
     try {
-
       let fotoUrl = foto;
-      console.log("2", fotoUrl)
-
-      if (foto && typeof foto === "string") {
-
-        if (foto.startsWith("file:")) {
-          try {
-            const uploadedUrl = await uploadImageToCloudinary(foto);
-            fotoUrl = uploadedUrl || null;
-          } catch (err) {
-            console.error("Erro ao enviar imagem:", err);
-            Toast.show({ type: "error", text1: "Erro ao enviar imagem" });
-            setSaving(false);
-            return;
-          }
-        } else {
-          fotoUrl = foto;
-        }
+      if (foto && typeof foto === "string" && foto.startsWith("file:")) {
+        fotoUrl = await uploadImageToCloudinary(foto);
       }
 
       const preferenciasSelecionadas = servicos
@@ -195,14 +171,14 @@ export default function EditCollaboratorScreen({ route, navigation }) {
 
       await updateDoc(doc(db, "colaboradores", collaboratorId), {
         nome,
-        foto: fotoUrl,
+        foto: fotoUrl || null,
         preferenciasServicos: preferenciasSelecionadas,
       });
 
       Toast.show({ type: "success", text1: "Colaborador atualizado" });
       navigation.goBack();
     } catch (error) {
-      console.error("Erro ao atualizar colaborador:", error);
+      console.error(error);
       Toast.show({ type: "error", text1: "Erro ao atualizar colaborador", text2: error.message });
     } finally {
       setSaving(false);
@@ -216,7 +192,7 @@ export default function EditCollaboratorScreen({ route, navigation }) {
         style={[
           styles.servicoItem,
           { backgroundColor: colors.card, borderColor: colors.border },
-          selected && { borderColor: "#329de4", backgroundColor: theme === "dark" ? "#1a2a3a" : "#e9f5ff" }
+          selected && { borderColor: "#329de4", backgroundColor: effectiveTheme === "dark" ? "#1a2a3a" : "#e9f5ff" }
         ]}
         onPress={() => togglePreferencia(item.id)}
       >
@@ -249,7 +225,7 @@ export default function EditCollaboratorScreen({ route, navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <TouchableOpacity onPress={pickImage} style={[styles.imageWrapper, { backgroundColor: theme === "dark" ? "#222" : "#e0f0ff" }]}>
+      <TouchableOpacity onPress={pickImage} style={[styles.imageWrapper, { backgroundColor: effectiveTheme === "dark" ? "#222" : "#e0f0ff" }]}>
         {foto ? <Image source={{ uri: foto }} style={styles.image} /> : <Text style={[styles.imagePlaceholder, { color: "#329de4" }]}>Selecionar foto</Text>}
       </TouchableOpacity>
 
@@ -283,7 +259,7 @@ export default function EditCollaboratorScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: width * 0.05 },
-  label: {
+   label: {
     fontSize: width * 0.04,
     marginBottom: 8,
     fontWeight: "500"

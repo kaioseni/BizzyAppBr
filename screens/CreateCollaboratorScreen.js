@@ -24,7 +24,6 @@ const uploadImageToCloudinary = async (fotoUri) => {
       body: formData,
     });
     const data = await res.json();
-    console.log("Cloudinary response:", data);
     return data.secure_url;
   } catch (err) {
     console.log("Erro upload Cloudinary:", err);
@@ -32,16 +31,13 @@ const uploadImageToCloudinary = async (fotoUri) => {
   }
 };
 
-
 export default function CreateCollaboratorScreen({ navigation }) {
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
+  const { effectiveTheme } = useContext(ThemeContext);  
 
-  const colors = {
-    light: { background: "#fff", card: "#f9f9f9", text: "#333", subtext: "#555", border: "#ddd", placeholder: "#777" },
-    dark: { background: "#121212", card: "#1E1E1E", text: "#f5f5f5", subtext: "#bbb", border: "#444", placeholder: "#aaa" },
-  };
-  const currentColors = colors[theme] || colors.light;
+  const colors = effectiveTheme === "dark"
+    ? { background: "#121212", card: "#1E1E1E", text: "#f5f5f5", subtext: "#bbb", border: "#444", placeholder: "#aaa" }
+    : { background: "#fff", card: "#f9f9f9", text: "#333", subtext: "#555", border: "#ddd", placeholder: "#777" };
 
   const [nome, setNome] = useState("");
   const [foto, setFoto] = useState(null);
@@ -128,10 +124,18 @@ export default function CreateCollaboratorScreen({ navigation }) {
   const renderServico = ({ item }) => {
     const selected = preferencias.has(item.id);
     return (
-      <TouchableOpacity style={[styles.servicoItem, { backgroundColor: currentColors.card, borderColor: currentColors.border }, selected && { borderColor: "#329de4", backgroundColor: "#e9f5ff" }]} onPress={() => togglePreferencia(item.id)} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={[
+          styles.servicoItem,
+          { backgroundColor: colors.card, borderColor: colors.border },
+          selected && { borderColor: "#329de4", backgroundColor: "#e9f5ff" }
+        ]}
+        onPress={() => togglePreferencia(item.id)}
+        activeOpacity={0.8}
+      >
         <View style={{ flex: 1 }}>
-          <Text style={[styles.servicoNome, { color: currentColors.text }]} numberOfLines={1}>{item.nome}</Text>
-          {item.descricao && <Text style={[styles.servicoDescricao, { color: currentColors.subtext }]} numberOfLines={2}>{item.descricao}</Text>}
+          <Text style={[styles.servicoNome, { color: colors.text }]} numberOfLines={1}>{item.nome}</Text>
+          {item.descricao && <Text style={[styles.servicoDescricao, { color: colors.subtext }]} numberOfLines={2}>{item.descricao}</Text>}
           <View style={styles.labelContainer}>
             {item.tipo === "padrao" && <View style={[styles.label, { backgroundColor: "#3498db" }]}><Layers size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Padrão</Text></View>}
             {item.tipo === "importado" && <View style={[styles.label, { backgroundColor: "#27ae60" }]}><Download size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Importado</Text></View>}
@@ -139,26 +143,44 @@ export default function CreateCollaboratorScreen({ navigation }) {
             {item.tipo === "criado" && <View style={[styles.label, { backgroundColor: "#8e44ad" }]}><UserIcon size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Criado</Text></View>}
           </View>
         </View>
-        <View style={{ marginLeft: 12 }}>{selected ? <CheckSquare size={24} color="#329de4" /> : <Square size={24} color={currentColors.subtext} />}</View>
+        <View style={{ marginLeft: 12 }}>{selected ? <CheckSquare size={24} color="#329de4" /> : <Square size={24} color={colors.subtext} />}</View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: "#329de4" }]}>Novo Colaborador</Text>
 
-      <TouchableOpacity onPress={pickImage} style={[styles.imageWrapper, { backgroundColor: theme === "dark" ? "#222" : "#e0f0ff" }]}>
+      <TouchableOpacity
+        onPress={pickImage}
+        style={[styles.imageWrapper, { backgroundColor: effectiveTheme === "dark" ? "#222" : "#e0f0ff" }]}
+      >
         {foto ? <Image source={{ uri: foto }} style={styles.image} /> : <Text style={[styles.imagePlaceholder, { color: "#329de4" }]}>Selecionar foto</Text>}
       </TouchableOpacity>
 
-      <TextInput style={[styles.input, { borderColor: currentColors.border, color: currentColors.text }]} placeholder="Nome do colaborador" placeholderTextColor={currentColors.placeholder} value={nome} onChangeText={setNome} />
-
-
+      <TextInput
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
+        placeholder="Nome do colaborador"
+        placeholderTextColor={colors.placeholder}
+        value={nome}
+        onChangeText={setNome}
+      />
 
       <Text style={[styles.subtitle, { color: "#329de4" }]}>Preferências de Serviços</Text>
 
-      {loadingServicos ? <ActivityIndicator size="large" color="#329de4" style={{ marginTop: 12 }} /> : servicos.length === 0 ? <Text style={{ color: currentColors.placeholder, marginBottom: 8 }}>Nenhum serviço disponível.</Text> : <FlatList data={servicos} keyExtractor={(item, index) => `${item.id}-${item.tipo}-${index}`} renderItem={renderServico} contentContainerStyle={{ paddingBottom: 16 }} />}
+      {loadingServicos ? (
+        <ActivityIndicator size="large" color="#329de4" style={{ marginTop: 12 }} />
+      ) : servicos.length === 0 ? (
+        <Text style={{ color: colors.placeholder, marginBottom: 8 }}>Nenhum serviço disponível.</Text>
+      ) : (
+        <FlatList
+          data={servicos}
+          keyExtractor={(item, index) => `${item.id}-${item.tipo}-${index}`}
+          renderItem={renderServico}
+          contentContainerStyle={{ paddingBottom: 16 }}
+        />
+      )}
 
       <TouchableOpacity style={styles.button} onPress={handleSave} disabled={loadingUpload}>
         {loadingUpload ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Salvar</Text>}
@@ -169,90 +191,73 @@ export default function CreateCollaboratorScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center"
+  title: { 
+    fontSize: 20, 
+    fontWeight: "bold", 
+    marginBottom: 20, 
+    textAlign: "center" 
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    fontSize: 16
+  input: { 
+    borderWidth: 1, 
+    borderRadius: 8, 
+    padding: 12, 
+    marginBottom: 15, 
+    fontSize: 16 
   },
-  imagePicker: {
-    height: 120,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 20
+  imageWrapper: { 
+    alignSelf: "center", 
+    marginBottom: 20, 
+    width: 120, 
+    height: 120, 
+    borderRadius: 60, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    overflow: "hidden" 
   },
-  image: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 8
+  image: { 
+    width: "100%", 
+    height: "100%", 
+    borderRadius: 8 
   },
-  imageWrapper: {
-    alignSelf: "center",
-    marginBottom: 20,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden"
+  imagePlaceholder: { 
+    fontSize: 14, 
+    fontWeight: "600" 
   },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10
+  subtitle: { 
+    fontSize: 16, 
+    fontWeight: "600", 
+    marginBottom: 10 
   },
-  servicoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10
+  servicoItem: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    borderWidth: 1, 
+    borderRadius: 10, 
+    padding: 12, 
+    marginBottom: 10 
   },
-  servicoNome: {
-    fontSize: 15,
-    fontWeight: "600"
+  servicoNome: { fontSize: 15, fontWeight: "600" },
+  servicoDescricao: { fontSize: 13, marginTop: 2 },
+  labelContainer: { flexDirection: "row", marginTop: 6 },
+  label: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    paddingHorizontal: 8, 
+    paddingVertical: 3, 
+    borderRadius: 6, 
+    marginRight: 6 
   },
-  servicoDescricao: {
-    fontSize: 13,
-    marginTop: 2
+  labelText: { 
+    color: "#fff", 
+    fontSize: 12, 
+    fontWeight: "600" 
   },
-  labelContainer: {
-    flexDirection: "row",
-    marginTop: 6
+  button: { 
+    backgroundColor: "#329de4", 
+    padding: 15, 
+    borderRadius: 8, 
+    alignItems: "center", 
+    marginTop: 10 
   },
-  label: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginRight: 6
-  },
-  labelText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600"
-  },
-  button: {
-    backgroundColor: "#329de4",
-    padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16
-  },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

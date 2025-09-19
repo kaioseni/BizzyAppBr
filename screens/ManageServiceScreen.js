@@ -13,26 +13,25 @@ import dayjs from "dayjs";
 
 export default function AtendimentoScreen() {
   const { user } = useContext(AuthContext);
-  const { theme } = useContext(ThemeContext);
+  const { effectiveTheme } = useContext(ThemeContext);
   const navigation = useNavigation();
   const route = useRoute();
   const { agendamento } = route.params;
 
+  const colors = effectiveTheme === "dark"
+    ? { background: "#121212", text: "#fff", border: "#555", primary: "#329de4", success: "green", danger: "red" }
+    : { background: "#fff", text: "#000", border: "#ccc", primary: "#329de4", success: "green", danger: "red" };
+
   const [nomeCliente, setNomeCliente] = useState(agendamento.nomeCliente || "");
   const [telefone, setTelefone] = useState(agendamento.telefone || "");
   const [dataHora, setDataHora] = useState(agendamento.dataHora?.toDate ? agendamento.dataHora.toDate() : new Date());
-
   const [servicos, setServicos] = useState([]);
   const [servicoSelecionado, setServicoSelecionado] = useState(agendamento.servico || "");
-
   const [colaboradores, setColaboradores] = useState([]);
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState(agendamento.colaborador || "");
-
   const [favoritosIds, setFavoritosIds] = useState(new Set());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-
-  const textoPicker = theme === "dark" ? "#fff" : "#000";
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -114,7 +113,6 @@ export default function AtendimentoScreen() {
         const lista = colSnap.docs
           .filter(doc => doc.data().idEstabelecimento === user.uid)
           .map(doc => ({ id: doc.id, nome: doc.data().nome }));
-
         setColaboradores(lista);
       } catch (err) {
         console.error("Erro ao carregar colaboradores:", err);
@@ -193,34 +191,34 @@ export default function AtendimentoScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme === "dark" ? "#121212" : "#fff" }]}>
-      <Text style={[styles.label, { color: theme === "dark" ? "#fff" : "#555" }]}>Nome do Cliente</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.label, { color: colors.text }]}>Nome do Cliente</Text>
       <TextInput
         placeholder="Nome do cliente"
-        placeholderTextColor={theme === "dark" ? "#aaa" : "#999"}
+        placeholderTextColor={colors.border}
         value={nomeCliente}
         onChangeText={setNomeCliente}
-        style={[styles.input, { color: theme === "dark" ? "#fff" : "#000", borderColor: theme === "dark" ? "#555" : "#ccc" }]}
+        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
       />
 
-      <Text style={[styles.label, { color: theme === "dark" ? "#fff" : "#555" }]}>Telefone</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Telefone</Text>
       <MaskedTextInput
         mask="55 (99) 9 9999-9999"
         keyboardType="phone-pad"
         placeholder="Telefone do cliente"
-        placeholderTextColor={theme === "dark" ? "#aaa" : "#999"}
+        placeholderTextColor={colors.border}
         value={telefone}
         onChangeText={setTelefone}
-        style={[styles.input, { color: theme === "dark" ? "#fff" : "#000", borderColor: theme === "dark" ? "#555" : "#ccc" }]}
+        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
       />
 
-      <Text style={[styles.label, { color: theme === "dark" ? "#fff" : "#555" }]}>Serviço</Text>
-      <View style={[styles.pickerWrapper, { borderColor: theme === "dark" ? "#555" : "#ccc" }]}>
+      <Text style={[styles.label, { color: colors.text }]}>Serviço</Text>
+      <View style={[styles.pickerWrapper, { borderColor: colors.border }]}>
         <Picker
           selectedValue={servicoSelecionado}
           onValueChange={setServicoSelecionado}
-          style={{ color: theme === "dark" ? "#fff" : "#000" }}
-          dropdownIconColor={theme === "dark" ? "#fff" : "#000"}
+          style={{ color: colors.text }}
+          dropdownIconColor={colors.text}
         >
           <Picker.Item label="Selecione um serviço" value="" enabled={false} />
           {servicos.map(s => (
@@ -233,13 +231,13 @@ export default function AtendimentoScreen() {
         </Picker>
       </View>
 
-      <Text style={[styles.label, { color: theme === "dark" ? "#fff" : "#555" }]}>Colaborador</Text>
-      <View style={[styles.pickerWrapper, { borderColor: theme === "dark" ? "#555" : "#ccc" }]}>
+      <Text style={[styles.label, { color: colors.text }]}>Colaborador</Text>
+      <View style={[styles.pickerWrapper, { borderColor: colors.border }]}>
         <Picker
           selectedValue={colaboradorSelecionado}
           onValueChange={setColaboradorSelecionado}
-          style={{ color: theme === "dark" ? "#fff" : "#000" }}
-          dropdownIconColor={theme === "dark" ? "#fff" : "#000"}
+          style={{ color: colors.text }}
+          dropdownIconColor={colors.text}
         >
           <Picker.Item label="Selecione um colaborador (opcional)" value="" />
           {colaboradores.map(c => (
@@ -248,12 +246,12 @@ export default function AtendimentoScreen() {
         </Picker>
       </View>
 
-      <Text style={[styles.label, { color: theme === "dark" ? "#fff" : "#555" }]}>Data e Hora</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Data e Hora</Text>
       <TouchableOpacity
         onPress={() => setShowDatePicker(true)}
-        style={[styles.input, { borderColor: theme === "dark" ? "#555" : "#ccc" }]}
+        style={[styles.input, { borderColor: colors.border }]}
       >
-        <Text style={{ color: theme === "dark" ? "#fff" : "#000" }}>{dayjs(dataHora).format("DD/MM/YYYY HH:mm")}</Text>
+        <Text style={{ color: colors.text }}>{dayjs(dataHora).format("DD/MM/YYYY HH:mm")}</Text>
       </TouchableOpacity>
 
       {showDatePicker && <DateTimePicker value={dataHora} mode="date" display="default" onChange={handleDateChange} />}
@@ -261,17 +259,17 @@ export default function AtendimentoScreen() {
 
       {agendamento.status !== "finalizado" && (
         <>
-          <TouchableOpacity style={styles.btn} onPress={salvarAlteracoes}>
+          <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={salvarAlteracoes}>
             <Text style={styles.btnText}>Salvar Alterações</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.btn, { backgroundColor: "green" }]} onPress={finalizarAtendimento}>
+          <TouchableOpacity style={[styles.btn, { backgroundColor: colors.success }]} onPress={finalizarAtendimento}>
             <Text style={styles.btnText}>Finalizar Atendimento</Text>
           </TouchableOpacity>
         </>
       )}
 
-      <TouchableOpacity style={[styles.btn, { backgroundColor: "red" }]} onPress={excluirAgendamento}>
+      <TouchableOpacity style={[styles.btn, { backgroundColor: colors.danger }]} onPress={excluirAgendamento}>
         <Text style={styles.btnText}>Excluir Agendamento</Text>
       </TouchableOpacity>
     </View>
@@ -280,32 +278,27 @@ export default function AtendimentoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4
+  label: { 
+    fontSize: 14, 
+    fontWeight: "600", 
+    marginBottom: 4 
   },
-  input: {
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15
+  input: { 
+    borderWidth: 1, 
+    padding: 12, 
+    borderRadius: 8, 
+    marginBottom: 15 
   },
-  pickerWrapper: {
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15
+  pickerWrapper: { 
+    borderWidth: 1, 
+    borderRadius: 8, 
+    marginBottom: 15 
   },
-  btn: {
-    backgroundColor: "#329de4",
+  btn: { 
     padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10
+    borderRadius: 8, 
+    alignItems: "center", 
+    marginTop: 10 
   },
-  btnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16
-  },
+  btnText: { color: "white", fontWeight: "bold", fontSize: 16 },
 });
