@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
-import { 
-  View, Text, FlatList, StyleSheet, TouchableOpacity, 
-  Dimensions, Modal, BackHandler 
+import {
+  View, Text, FlatList, StyleSheet, TouchableOpacity,
+  Dimensions, Modal, BackHandler
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Plus, Calendar, User } from "lucide-react-native";
@@ -11,9 +11,9 @@ import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
 import { db } from "../firebase/firebaseConfig";
-import { 
-  collection, query, where, orderBy, Timestamp, 
-  onSnapshot, getDoc, getDocs, doc 
+import {
+  collection, query, where, orderBy, Timestamp,
+  onSnapshot, getDoc, getDocs, doc
 } from "firebase/firestore";
 
 const { width, height } = Dimensions.get("window");
@@ -22,7 +22,7 @@ const APP_BLUE = "#329de4";
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { user, loading } = useContext(AuthContext);
- 
+
   const { effectiveTheme } = useContext(ThemeContext);
   const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
@@ -39,7 +39,7 @@ export default function HomeScreen() {
     React.useCallback(() => {
       const backAction = () => {
         setExitModalVisible(true);
-        return true; 
+        return true;
       };
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
@@ -199,63 +199,63 @@ export default function HomeScreen() {
       )}
 
       <FlatList
-        data={agendamentos}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingBottom: 120 }}
-        renderItem={({ item }) => {
-          const atrasado = isLate(item.dataHora);
-          return (
-            <TouchableOpacity
-              onPress={() => navigation.navigate("ManageService", { agendamento: item })}
-              style={[
-                styles.card,
-                { backgroundColor: currentTheme.card, borderColor: APP_BLUE },
-                atrasado && { borderColor: "red", backgroundColor: "#ffe6e6" }
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={[styles.time, { color: APP_BLUE }]}>
-                  {item.dataHora instanceof Date
-                    ? dayjs(item.dataHora).format("HH:mm")
-                    : dayjs(item.dataHora.toDate()).format("HH:mm")}
-                </Text>
-                <Text style={[styles.name, { color: currentTheme.text }]}>
-                  {item.nomeCliente}
-                </Text>
-              </View>
+  data={agendamentos}
+  keyExtractor={item => item.id}
+  contentContainerStyle={{ paddingBottom: 120 }}
+  renderItem={({ item }) => {
+    const atrasado = isLate(item.dataHora); // já calcula se está atrasado
 
-              {item.servico && (
-                <Text style={[styles.servico, { color: APP_BLUE }]}>
-                  Serviço: {getNomeServico(item.servico)}
-                </Text>
-              )}
+    return (
+      <TouchableOpacity
+        onPress={() => navigation.navigate("ManageService", { agendamento: item })}
+        style={[
+          styles.card,
+          { backgroundColor: currentTheme.card, borderColor: APP_BLUE },
+          atrasado && { borderColor: "red", backgroundColor: "#fec6c6ff" } // card atrasado
+        ]}
+      >
+        <View style={styles.cardHeader}>
+          <Text style={[styles.name, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
+            {item.nomeCliente}
+          </Text>
+          <Text style={[styles.time, { color: APP_BLUE }]}>
+            {item.dataHora instanceof Date
+              ? dayjs(item.dataHora).format("HH:mm")
+              : dayjs(item.dataHora.toDate()).format("HH:mm")}
+          </Text>
+        </View>
 
-              {item.colaborador && (
-                <View style={styles.colaboradorWrapper}>
-                  <User size={14} color={APP_BLUE} style={{ marginRight: 6 }} />
-                  <Text style={[styles.colaborador, { color: APP_BLUE }]}>
-                    {item.colaborador}
-                  </Text>
-                </View>
-              )}
+        {item.servico && (
+          <Text style={[styles.servico, { color: APP_BLUE }]}>
+            Serviço: {getNomeServico(item.servico)}
+          </Text>
+        )}
 
-              <Text style={[styles.phone, { color: currentTheme.text }]}>
-                {item.telefone}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: currentTheme.text }]}>
-              Nenhum agendamento para este dia
+        {item.colaborador && (
+          <View style={styles.colaboradorWrapper}>
+            <User size={14} color={APP_BLUE} style={{ marginRight: 6 }} />
+            <Text style={[styles.colaborador, { color: APP_BLUE }]}>
+              {item.colaborador}
             </Text>
           </View>
-        }
-      />
+        )}
 
-      {/* FAB */}
+        <Text style={[styles.phone, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
+          {item.telefone}
+        </Text>
+      </TouchableOpacity>
+    );
+  }}
+  ItemSeparatorComponent={() => <View style={styles.separator} />}
+  ListEmptyComponent={
+    <View style={styles.emptyContainer}>
+      <Text style={[styles.emptyText, { color: currentTheme.text }]}>
+        Nenhum agendamento para este dia
+      </Text>
+    </View>
+  }
+/>
+
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: APP_BLUE }]}
         onPress={() => navigation.navigate("AppointmentsScreen")}
