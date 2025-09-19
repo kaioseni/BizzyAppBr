@@ -28,7 +28,10 @@ export default function App() {
         if (onboarding !== null) setViewOnboarding(true);
 
         const useBio = await AsyncStorage.getItem("useBiometrics");
-        if (useBio === "true") setLockEnabled(true);
+        const savedUid = await AsyncStorage.getItem("uid");
+        if (savedUid || useBio === "true" ) {
+          setLockEnabled(true);
+        }
       } catch (err) {
         console.log("Erro ao inicializar app:", err);
       } finally {

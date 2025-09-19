@@ -12,33 +12,56 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-
+ 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser ? { uid: currentUser.uid, email: currentUser.email } : null);
+      setUser(
+        currentUser ? { uid: currentUser.uid, email: currentUser.email } : null
+      );
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
+ 
+  useEffect(() => {
+    const loadUserFromStorage = async () => {
+      try {
+        const savedUid = await AsyncStorage.getItem("uid");
+        if (savedUid && !user) {
+          setUser({ uid: savedUid });
+        }
+      } catch (e) {
+        console.log("Erro ao recuperar usuário do storage:", e);
+      }
+    };
+
+    loadUserFromStorage();
+  }, [user]);
 
   const register = async (email, password, extraData, uploadImageFn) => {
     let user;
     try {
-      
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       user = userCredential.user;
-      
+
       let logoUrl = null;
       if (extraData.logo && uploadImageFn) {
         try {
           logoUrl = await uploadImageFn(extraData.logo);
         } catch (err) {
-          await deleteUser(user);  
+          await deleteUser(user);
           throw new Error("Falha ao enviar logotipo: " + err.message);
         }
       }
-     
-      await setDoc(doc(db, "users", user.uid), { email, createdAt: new Date() });
+
+      await setDoc(doc(db, "users", user.uid), {
+        email,
+        createdAt: new Date(),
+      });
 
       await setDoc(doc(collection(db, "estabelecimentos"), user.uid), {
         userId: user.uid,
@@ -59,7 +82,11 @@ export const AuthProvider = ({ children }) => {
       return user;
     } catch (error) {
       if (user) {
-        try { await deleteUser(user); } catch (e) { console.warn("Erro ao deletar usuário parcialmente criado:", e); }
+        try {
+          await deleteUser(user);
+        } catch (e) {
+          console.warn("Erro ao deletar usuário parcialmente criado:", e);
+        }
       }
       throw error;
     }
@@ -83,35 +110,51 @@ export const AuthProvider = ({ children }) => {
     const useBio = await AsyncStorage.getItem("useBiometrics");
     if (useBio === "true") return;
 
-    Alert.alert("Autenticação biométrica", "Deseja usar sua biometria para futuros logins?", [
-      { text: "Agora não", style: "cancel" },
-      {
-        text: "Sim",
-        onPress: async () => {
-          await AsyncStorage.setItem("useBiometrics", "true");
-          await AsyncStorage.setItem("uid", uid);
-        }
-      }
-    ]);
+    Alert.alert(
+      "Autenticação biométrica",
+      "Deseja usar sua biometria para futuros logins?",
+      [
+        { text: "Agora não", style: "cancel" },
+        {
+          text: "Sim",
+          onPress: async () => {
+            await AsyncStorage.setItem("useBiometrics", "true");
+            await AsyncStorage.setItem("uid", uid);
+          },
+        },
+      ]
+    );
   };
 
-  const initBiometric = async () => {
+ const initBiometric = async () => {
+  try {
     const compatible = await LocalAuthentication.hasHardwareAsync();
     const enrolled = await LocalAuthentication.isEnrolledAsync();
     setBiometricAvailable(compatible && enrolled);
 
     const useBio = await AsyncStorage.getItem("useBiometrics");
-
+    const savedUid = await AsyncStorage.getItem("uid");
+ 
     if (compatible && enrolled && useBio === "true") {
       const success = await handleBiometricAuth();
-      if (success) {
-        const savedUid = await AsyncStorage.getItem("uid");
-        if (savedUid) setUser({ uid: savedUid });
+      if (success && savedUid) {
+        setUser({ uid: savedUid });
         return true;
       }
     }
+ 
+    if ((!compatible || !enrolled) && savedUid) {
+      setUser({ uid: savedUid });
+      return true;
+    }
+
     return false;
-  };
+  } catch (error) {
+    console.log("Erro em initBiometric:", error);
+    return false;
+  }
+};
+
 
   const handleBiometricAuth = async () => {
     const result = await LocalAuthentication.authenticateAsync({
@@ -122,7 +165,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, senha) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      senha
+    );
     const currentUser = userCredential.user;
     setUser({ uid: currentUser.uid, email: currentUser.email });
     await AsyncStorage.setItem("uid", currentUser.uid);
