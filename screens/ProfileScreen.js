@@ -1,28 +1,43 @@
-import { useState, useEffect, useContext } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Image, Dimensions, ScrollView } from "react-native";
+import { useState, useCallback, useContext } from "react";
+import { View, Text, StyleSheet, ActivityIndicator, Image, Dimensions, ScrollView, TouchableOpacity } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { db } from "../firebase/firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { Pencil } from "lucide-react-native";
 
 const { width } = Dimensions.get("window");
 const APP_BLUE = "#329de4";
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const { effectiveTheme } = useContext(ThemeContext);
 
-  const currentTheme = effectiveTheme === "dark"
-    ? { background: "#121212", card: "#1e1e1e", text: "#fff", textSecondary: "#ccc" }
-    : { background: "#fff", card: "#f9f9f9", text: "#333", textSecondary: "#555" };
+  const currentTheme =
+    effectiveTheme === "dark"
+      ? {
+          background: "#121212",
+          card: "#1e1e1e",
+          text: "#fff",
+          textSecondary: "#ccc",
+        }
+      : {
+          background: "#fff",
+          card: "#f9f9f9",
+          text: "#333",
+          textSecondary: "#555",
+        };
 
   const [estabelecimento, setEstabelecimento] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     if (!user?.uid) return;
 
     const fetchEstabelecimento = async () => {
+      setLoading(true);
       try {
         const q = query(
           collection(db, "estabelecimentos"),
@@ -31,7 +46,8 @@ export default function ProfileScreen() {
         const snapshot = await getDocs(q);
 
         if (!snapshot.empty) {
-          setEstabelecimento(snapshot.docs[0].data());
+          const docSnap = snapshot.docs[0];
+          setEstabelecimento({ id: docSnap.id, ...docSnap.data() });
         }
       } catch (error) {
         console.error("Erro ao buscar estabelecimento:", error);
@@ -41,61 +57,104 @@ export default function ProfileScreen() {
     };
 
     fetchEstabelecimento();
-  }, [user]);
+  }, [user?.uid])
+);
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: currentTheme.background }]}>
+      <View
+        style={[styles.center, { backgroundColor: currentTheme.background }]}
+      >
         <ActivityIndicator size="large" color={APP_BLUE} />
-        <Text style={{ marginTop: 10, color: currentTheme.text }}>Carregando informações...</Text>
+        <Text style={{ marginTop: 10, color: currentTheme.text }}>
+          Carregando informações...
+        </Text>
       </View>
     );
   }
 
   if (!estabelecimento) {
     return (
-      <View style={[styles.center, { backgroundColor: currentTheme.background }]}>
-        <Text style={{ color: currentTheme.textSecondary }}>Nenhum estabelecimento encontrado.</Text>
+      <View
+        style={[styles.center, { backgroundColor: currentTheme.background }]}
+      >
+        <Text style={{ color: currentTheme.textSecondary }}>
+          Nenhum estabelecimento encontrado.
+        </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: currentTheme.background }]}>
-      {estabelecimento.logo ? (
-        <Image
-          source={{ uri: estabelecimento.logo }}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      ) : (
-        <View style={styles.logoPlaceholder}>
-          <Text style={styles.logoPlaceholderText}>
-            {estabelecimento.nomeEstabelecimento?.[0]?.toUpperCase() || "?"}
-          </Text>
-        </View>
-      )}
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: currentTheme.background },
+      ]}
+    >
+      <View style={{ position: "relative", alignItems: "center" }}>
+        {estabelecimento.logo ? (
+          <Image
+            source={{ uri: estabelecimento.logo }}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={styles.logoPlaceholder}>
+            <Text style={styles.logoPlaceholderText}>
+              {estabelecimento.nomeEstabelecimento?.[0]?.toUpperCase() || "?"}
+            </Text>
+          </View>
+        )}
+ 
+        <TouchableOpacity
+          style={styles.editIcon}
+          onPress={() =>
+            navigation.navigate("EditProfileScreen", {
+              estabelecimento,
+              id: estabelecimento.id,
+            })
+          }
+        >
+          <Pencil size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-      <Text style={[styles.title, { color: APP_BLUE }]}>{estabelecimento.nomeEstabelecimento}</Text>
+      <Text style={[styles.title, { color: APP_BLUE }]}>
+        {estabelecimento.nomeEstabelecimento}
+      </Text>
       <Text style={[styles.subtitle, { color: currentTheme.text }]}>
         {estabelecimento.ramoAtividade}
       </Text>
 
-      <View style={[styles.infoCard, { backgroundColor: currentTheme.card }]}>
-        <Text style={[styles.label, { color: currentTheme.text }]}>Telefone:</Text>
-        <Text style={[styles.value, { color: currentTheme.text }]}>{estabelecimento.telefone}</Text>
+      <View style={[styles.infoCard, { backgroundColor: currentTheme.card, borderColor: APP_BLUE, borderWidth: 2 }]}>
+        <Text style={[styles.label, { color: currentTheme.text }]}>
+          Telefone:
+        </Text>
+        <Text style={[styles.value, { color: currentTheme.text }]}>
+          {estabelecimento.telefone}
+        </Text>
 
-        <Text style={[styles.label, { color: currentTheme.text }]}>Endereço:</Text>
+        <Text style={[styles.label, { color: currentTheme.text }]}>
+          Endereço:
+        </Text>
         <Text style={[styles.value, { color: currentTheme.text }]}>
           {estabelecimento.logradouro}, {estabelecimento.numero}{" "}
-          {estabelecimento.complemento ? `- ${estabelecimento.complemento}` : ""}
+          {estabelecimento.complemento
+            ? `- ${estabelecimento.complemento}`
+            : ""}
         </Text>
         <Text style={[styles.value, { color: currentTheme.text }]}>
-          {estabelecimento.bairro}, {estabelecimento.cidade} - {estabelecimento.estado}
+          {estabelecimento.bairro}, {estabelecimento.cidade} -{" "}
+          {estabelecimento.estado}
         </Text>
-        <Text style={[styles.value, { color: currentTheme.text }]}>CEP: {estabelecimento.cep}</Text>
+        <Text style={[styles.value, { color: currentTheme.text }]}>
+          CEP: {estabelecimento.cep}
+        </Text>
 
-        <Text style={[styles.label, { color: currentTheme.text }]}>Criado em:</Text>
+        <Text style={[styles.label, { color: currentTheme.text }]}>
+          Criado em:
+        </Text>
         <Text style={[styles.value, { color: currentTheme.text }]}>
           {estabelecimento.createdAt?.toDate
             ? estabelecimento.createdAt.toDate().toLocaleString("pt-BR")
@@ -122,7 +181,7 @@ const styles = StyleSheet.create({
     height: width * 0.4,
     borderRadius: width * 0.2,
     marginBottom: 20,
-    borderColor: '#c8c8c8ff',
+    borderColor: "#c8c8c8ff",
     borderWidth: 1,
   },
   logoPlaceholder: {
@@ -162,5 +221,14 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: width * 0.04,
+  },
+  editIcon: {
+    position: "absolute",
+    top: -10, 
+    right: 10,  
+    backgroundColor: APP_BLUE,
+    padding: 8,
+    borderRadius: 20,
+    elevation: 4,
   },
 });

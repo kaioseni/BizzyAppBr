@@ -21,6 +21,7 @@ import EditServiceScreen from "../screens/EditServiceScreen";
 import ManageServiceScreen from "../screens/ManageServiceScreen";
 import FinishedScreen from "../screens/FinishedScreen";
 import ThemeSettingsScreen from "../screens/ThemeSettingsScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
 import { StatusBar } from "react-native";
 
 const Stack = createNativeStackNavigator();
@@ -68,6 +69,7 @@ export default function AppRoutes({ viewOnboarding, lockEnabled }) {
         <Stack.Screen name="ManageService" component={ManageServiceScreen} options={{ title: "Editar Agendamento" }} />
         <Stack.Screen name="FinishedScreen" component={FinishedScreen} options={{ title: "Agendamentos Finalizados" }} />
         <Stack.Screen name="ThemeSettingsScreen" component={ThemeSettingsScreen} options={{ title: "Tema do Aplicativo" }} />
+        <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} options={{ title: "Editar Estabelecimento" }} />
       </Stack.Navigator>
     </>
   );
