@@ -202,7 +202,7 @@ export default function AppointmentsScreen({ navigation }) {
         placeholderTextColor={currentTheme.textSecondary}
         value={nomeCliente}
         onChangeText={setNomeCliente}
-        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: currentTheme.border || "#ccc" }]}
+        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: APP_BLUE }]}
       />
 
       <MaskedTextInput
@@ -212,10 +212,10 @@ export default function AppointmentsScreen({ navigation }) {
         placeholderTextColor={currentTheme.textSecondary}
         value={telefone}
         onChangeText={setTelefone}
-        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: currentTheme.border || "#ccc" }]}
+        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: APP_BLUE }]}
       />
 
-      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: currentTheme.border || "#ccc" }]}>
+      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
         <Picker
           selectedValue={servicoSelecionado}
           onValueChange={setServicoSelecionado}
@@ -229,7 +229,7 @@ export default function AppointmentsScreen({ navigation }) {
         </Picker>
       </View>
 
-      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: currentTheme.border || "#ccc" }]}>
+      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
         <Picker
           selectedValue={colaboradorSelecionado}
           onValueChange={setColaboradorSelecionado}
@@ -243,7 +243,7 @@ export default function AppointmentsScreen({ navigation }) {
         </Picker>
       </View>
 
-      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, { backgroundColor: currentTheme.card, borderColor: currentTheme.border || "#ccc" }]}>
+      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
         <Text style={{ color: currentTheme.text }}>{dataHora.toLocaleString()}</Text>
       </TouchableOpacity>
       {showDatePicker && <DateTimePicker value={dataHora} mode="date" display="default" onChange={onDateChange} />}
