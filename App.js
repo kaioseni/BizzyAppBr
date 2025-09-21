@@ -1,13 +1,13 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { useEffect, useState, useContext } from "react";
+import { NavigationContainer, DarkTheme as RNDarkTheme, DefaultTheme as RNLightTheme } from "@react-navigation/native";
 import AppRoutes from "./routes/AppRoutes";
 import { AuthProvider } from "./contexts/AuthContext";
 import Toast from "react-native-toast-message";
 import { getToastConfig } from "./utils/toastConfig";
 import { ThemeProvider, ThemeContext } from "./contexts/ThemeContext";
-import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
 import { lightTheme, darkTheme } from "./utils/themes";
 
 const Loading = () => (
@@ -21,6 +21,31 @@ export default function App() {
   const [viewOnboarding, setViewOnboarding] = useState(false);
   const [lockEnabled, setLockEnabled] = useState(false);
 
+  return (
+    <ThemeProvider>
+      <InnerApp
+        loading={loading}
+        setLoading={setLoading}
+        viewOnboarding={viewOnboarding}
+        setViewOnboarding={setViewOnboarding}
+        lockEnabled={lockEnabled}
+        setLockEnabled={setLockEnabled}
+      />
+    </ThemeProvider>
+  );
+}
+
+function InnerApp({ loading, setLoading, viewOnboarding, setViewOnboarding, lockEnabled, setLockEnabled }) {
+  const { effectiveTheme } = useContext(ThemeContext);
+  const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
+
+   
+  useEffect(() => {
+    const background = currentTheme.background;
+    SystemUI.setBackgroundColorAsync(background);
+  }, [currentTheme]);
+
+  
   useEffect(() => {
     const initApp = async () => {
       try {
@@ -29,9 +54,7 @@ export default function App() {
 
         const useBio = await AsyncStorage.getItem("useBiometrics");
         const savedUid = await AsyncStorage.getItem("uid");
-        if (savedUid || useBio === "true" ) {
-          setLockEnabled(true);
-        }
+        if (savedUid || useBio === "true") setLockEnabled(true);
       } catch (err) {
         console.log("Erro ao inicializar app:", err);
       } finally {
@@ -45,29 +68,10 @@ export default function App() {
   if (loading) return <Loading />;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={effectiveTheme === "dark" ? RNDarkTheme : RNLightTheme}>
       <AuthProvider>
-        <ThemeProvider>
-          <ThemeContext.Consumer>
-            {({ theme }) => {
-              const currentTheme = theme === "dark" ? darkTheme : lightTheme;
-
-              return (
-                <>
-                  <StatusBar
-                    style={theme === "dark" ? "light" : "dark"}
-                    backgroundColor={currentTheme.background}
-                  />
-                  <AppRoutes
-                    viewOnboarding={viewOnboarding}
-                    lockEnabled={lockEnabled}
-                  />
-                  <Toast config={getToastConfig(currentTheme)} />
-                </>
-              );
-            }}
-          </ThemeContext.Consumer>
-        </ThemeProvider>
+        <AppRoutes viewOnboarding={viewOnboarding} lockEnabled={lockEnabled} />
+        <Toast config={getToastConfig(currentTheme)} />
       </AuthProvider>
     </NavigationContainer>
   );

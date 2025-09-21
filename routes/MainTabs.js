@@ -5,6 +5,7 @@ import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
 import HomeScreen from "../screens/HomeScreen";
 import MoreScreen from "../screens/MoreScreen";
+import { View } from "react-native";
 
 const Tab = createBottomTabNavigator();
 const APP_BLUE = "#329de4";
@@ -15,17 +16,24 @@ export default function MainTabs() {
 
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: APP_BLUE,
-        tabBarInactiveTintColor: currentTheme.textSecondary || "#777",
-        tabBarStyle: {
+  screenOptions={{
+    headerShown: false,
+    tabBarActiveTintColor: APP_BLUE,
+    tabBarInactiveTintColor: currentTheme.textSecondary || "#777",
+    tabBarStyle: {
+      borderTopWidth: 0,
+      elevation: 4,
+    },
+    tabBarBackground: () => (
+      <View
+        style={{
+          flex: 1,
           backgroundColor: currentTheme.tabBar || currentTheme.card,
-          borderTopWidth: 0,
-          elevation: 4,
-        },
-      }}
-    >
+        }}
+      />
+    ),
+  }}
+>
       <Tab.Screen
         name="Home"
         component={HomeScreen}
