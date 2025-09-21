@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, StyleSheet, Dimensions, Alert } from "react-native";
-import { User, Wrench, Settings, Users, Info, FileChartColumnIncreasing, BookCheck } from "lucide-react-native";
+import { User, Wrench, Settings, Users, Info, FileChartColumnIncreasing, BookCheck, LogOut  } from "lucide-react-native";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { AuthContext } from "../contexts/AuthContext";
 import { lightTheme, darkTheme } from "../utils/themes";
@@ -9,7 +9,7 @@ const { width, height } = Dimensions.get("window");
 const APP_BLUE = "#329de4";
 
 export default function MoreScreen({ navigation }) {
-  const { effectiveTheme } = useContext(ThemeContext); 
+  const { effectiveTheme } = useContext(ThemeContext);
   const { logout } = useContext(AuthContext);
 
   const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
@@ -71,38 +71,44 @@ export default function MoreScreen({ navigation }) {
           })}
         </View>
       </ScrollView>
- 
+
       <TouchableOpacity
-        style={[styles.logoutButton, { 
-          backgroundColor: "#e53935", 
-          position: "absolute", 
-          bottom: height * 0.01, 
-          left: width * 0.06, 
-          right: width * 0.06, 
-          paddingVertical: height * 0.02 
-        }]}
+        style={{
+          position: "absolute",
+          bottom: height * 0.03,
+          right: width * 0.05,
+          width: width * 0.14,
+          height: width * 0.14,
+          borderRadius: (width * 0.14) / 2,
+          backgroundColor: "#e53935",
+          justifyContent: "center",
+          alignItems: "center",
+          elevation: 5,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 3,
+        }}
         onPress={handleLogoutPress}
       >
-        <Text style={{ color: "#fff", fontWeight: "bold", fontSize: width * 0.045, textAlign: "center" }}>
-          Sair
-        </Text>
+       <LogOut color={"#FFFFFF"}/>
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
   },
-  title: { 
-    fontWeight: "bold", 
-    marginBottom: height * 0.03, 
-    textAlign: "center" 
+  title: {
+    fontWeight: "bold",
+    marginBottom: height * 0.03,
+    textAlign: "center"
   },
-  menuGrid: { 
-    flexDirection: "row", 
-    flexWrap: "wrap", 
+  menuGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-around",
   },
   menuItem: {
@@ -118,10 +124,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
-  menuText: { 
-    marginTop: height * 0.01, 
-    fontWeight: "500", 
-    textAlign: "center" 
+  menuText: {
+    marginTop: height * 0.01,
+    fontWeight: "500",
+    textAlign: "center"
   },
   logoutButton: {
     flexDirection: "row",

@@ -4,7 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { db } from "../firebase/firebaseConfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc } from "firebase/firestore";
 import { Pencil } from "lucide-react-native";
 
 const { width } = Dimensions.get("window");
@@ -34,7 +34,20 @@ export default function ProfileScreen({ navigation }) {
 
           if (!snapshot.empty) {
             const docSnap = snapshot.docs[0];
-            setEstabelecimento({ id: docSnap.id, ...docSnap.data() });
+            let data = { id: docSnap.id, ...docSnap.data() };
+
+             
+            if (data.ramoAtividade?.id || data.ramoAtividade?.path) {
+              const ramoRef = data.ramoAtividade;
+              const ramoSnap = await getDoc(ramoRef);
+              if (ramoSnap.exists()) {
+                data.ramoAtividade = ramoSnap.data().nome;  
+              } else {
+                data.ramoAtividade = "Não informado";
+              }
+            }
+
+            setEstabelecimento(data);
           }
         } catch (error) {
           console.error("Erro ao buscar estabelecimento:", error);

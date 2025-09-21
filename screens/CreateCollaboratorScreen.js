@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, FlatList, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, FlatList, ActivityIndicator, Dimensions, SafeAreaView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../contexts/AuthContext";
@@ -12,6 +12,9 @@ import { Download, Edit3, Layers, User as UserIcon, CheckSquare, Square } from "
 
 const CLOUDINARY_CLOUD_NAME = "dol0wheky";
 const CLOUDINARY_UPLOAD_PRESET = "colaboradores";
+
+const { width, height } = Dimensions.get("window");
+const APP_BLUE = "#329de4";
 
 const uploadImageToCloudinary = async (fotoUri) => {
   const formData = new FormData();
@@ -125,91 +128,90 @@ export default function CreateCollaboratorScreen({ navigation }) {
     const selected = preferencias.has(item.id);
     return (
       <TouchableOpacity
-        style={[
-          styles.servicoItem,
-          { backgroundColor: colors.card, borderColor: colors.border },
-          selected && { borderColor: "#329de4", backgroundColor: "#e9f5ff" }
-        ]}
+        style={[styles.servicoItem, { backgroundColor: colors.card, borderColor: colors.border, padding: width * 0.03, borderRadius: width * 0.025 }, selected && { borderColor: APP_BLUE, backgroundColor: "#e9f5ff" }]}
         onPress={() => togglePreferencia(item.id)}
         activeOpacity={0.8}
       >
         <View style={{ flex: 1 }}>
-          <Text style={[styles.servicoNome, { color: colors.text }]} numberOfLines={1}>{item.nome}</Text>
-          {item.descricao && <Text style={[styles.servicoDescricao, { color: colors.subtext }]} numberOfLines={2}>{item.descricao}</Text>}
+          <Text style={[styles.servicoNome, { color: colors.subtext, fontSize: Math.min(width * 0.04, 16) }]} numberOfLines={1}>{item.nome}</Text>
+          {item.descricao && <Text style={[styles.servicoDescricao, { color: colors.subtext, fontSize: Math.min(width * 0.035, 14) }]} numberOfLines={2}>{item.descricao}</Text>}
           <View style={styles.labelContainer}>
-            {item.tipo === "padrao" && <View style={[styles.label, { backgroundColor: "#3498db" }]}><Layers size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Padrão</Text></View>}
-            {item.tipo === "importado" && <View style={[styles.label, { backgroundColor: "#27ae60" }]}><Download size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Importado</Text></View>}
-            {item.tipo === "personalizado" && <View style={[styles.label, { backgroundColor: "#e67e22" }]}><Edit3 size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Personalizado</Text></View>}
-            {item.tipo === "criado" && <View style={[styles.label, { backgroundColor: "#8e44ad" }]}><UserIcon size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Criado</Text></View>}
+            {item.tipo === "padrao" && <View style={[styles.label, { backgroundColor: "#3498db", paddingHorizontal: width * 0.015 }]}><Layers size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Padrão</Text></View>}
+            {item.tipo === "importado" && <View style={[styles.label, { backgroundColor: "#27ae60", paddingHorizontal: width * 0.015 }]}><Download size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Importado</Text></View>}
+            {item.tipo === "personalizado" && <View style={[styles.label, { backgroundColor: "#e67e22", paddingHorizontal: width * 0.015 }]}><Edit3 size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Personalizado</Text></View>}
+            {item.tipo === "criado" && <View style={[styles.label, { backgroundColor: "#8e44ad", paddingHorizontal: width * 0.015 }]}><UserIcon size={14} color="#fff" style={{ marginRight: 4 }} /><Text style={styles.labelText}>Criado</Text></View>}
           </View>
         </View>
-        <View style={{ marginLeft: 12 }}>{selected ? <CheckSquare size={24} color="#329de4" /> : <Square size={24} color={colors.subtext} />}</View>
+        <View style={{ marginLeft: width * 0.03 }}>{selected ? <CheckSquare size={24} color={APP_BLUE} /> : <Square size={24} color={colors.subtext} />}</View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: "#329de4" }]}>Novo Colaborador</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <FlatList
+        data={servicos}
+        keyExtractor={(item, index) => `${item.id}-${item.tipo}-${index}`}
+        renderItem={renderServico}
+        ListHeaderComponent={
+          <>
+            <Text style={[styles.title, { color: APP_BLUE, fontSize: Math.min(width * 0.06, 22) }]}>Novo Colaborador</Text>
 
-      <TouchableOpacity
-        onPress={pickImage}
-        style={[styles.imageWrapper, { backgroundColor: effectiveTheme === "dark" ? "#222" : "#e0f0ff" }]}
-      >
-        {foto ? <Image source={{ uri: foto }} style={styles.image} /> : <Text style={[styles.imagePlaceholder, { color: "#329de4" }]}>Selecionar foto</Text>}
-      </TouchableOpacity>
+            <TouchableOpacity
+              onPress={pickImage}
+              style={[styles.imageWrapper, { backgroundColor: effectiveTheme === "dark" ? "#222" : "#e0f0ff", width: width * 0.3, height: width * 0.3, borderRadius: width * 0.15 }]}
+            >
+              {foto ? <Image source={{ uri: foto }} style={styles.image} /> : <Text style={[styles.imagePlaceholder, { color: APP_BLUE, fontSize: Math.min(width * 0.04, 16) }]}>Selecionar foto</Text>}
+            </TouchableOpacity>
 
-      <TextInput
-        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-        placeholder="Nome do colaborador"
-        placeholderTextColor={colors.placeholder}
-        value={nome}
-        onChangeText={setNome}
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, fontSize: Math.min(width * 0.045, 16), padding: width * 0.03, borderRadius: width * 0.02 }]}
+              placeholder="Nome do colaborador"
+              placeholderTextColor={colors.placeholder}
+              value={nome}
+              onChangeText={setNome}
+            />
+
+            <Text style={[styles.subtitle, { color: APP_BLUE, fontSize: Math.min(width * 0.045, 16) }]}>Preferências de Serviços</Text>
+
+            {loadingServicos && <ActivityIndicator size="large" color={APP_BLUE} style={{ marginTop: 12 }} />}
+          </>
+        }
+        ListFooterComponent={<View style={{ height: height * 0.18 }} />}  
+        contentContainerStyle={{ paddingHorizontal: width * 0.05 }}
       />
 
-      <Text style={[styles.subtitle, { color: "#329de4" }]}>Preferências de Serviços</Text>
-
-      {loadingServicos ? (
-        <ActivityIndicator size="large" color="#329de4" style={{ marginTop: 12 }} />
-      ) : servicos.length === 0 ? (
-        <Text style={{ color: colors.placeholder, marginBottom: 8 }}>Nenhum serviço disponível.</Text>
-      ) : (
-        <FlatList
-          data={servicos}
-          keyExtractor={(item, index) => `${item.id}-${item.tipo}-${index}`}
-          renderItem={renderServico}
-          contentContainerStyle={{ paddingBottom: 16 }}
-        />
-      )}
-
-      <TouchableOpacity style={styles.button} onPress={handleSave} disabled={loadingUpload}>
-        {loadingUpload ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Salvar</Text>}
+      <TouchableOpacity
+        style={{
+          position: "absolute",
+          bottom: height * 0.08,
+          left: width * 0.05,
+          right: width * 0.05,
+          backgroundColor: APP_BLUE,
+          paddingVertical: height * 0.02,
+          borderRadius: width * 0.02,
+          alignItems: "center",
+        }}
+        onPress={handleSave}
+        disabled={loadingUpload}
+      >
+        {loadingUpload ? <ActivityIndicator color="#fff" /> : <Text style={[styles.buttonText, { fontSize: Math.min(width * 0.045, 16) }]}>Salvar</Text>}
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { flex: 1 },
   title: { 
-    fontSize: 20, 
     fontWeight: "bold", 
     marginBottom: 20, 
     textAlign: "center" 
   },
-  input: { 
-    borderWidth: 1, 
-    borderRadius: 8, 
-    padding: 12, 
-    marginBottom: 15, 
-    fontSize: 16 
-  },
+  input: { borderWidth: 1, marginBottom: 15 },
   imageWrapper: { 
     alignSelf: "center", 
     marginBottom: 20, 
-    width: 120, 
-    height: 120, 
-    borderRadius: 60, 
     justifyContent: "center", 
     alignItems: "center", 
     overflow: "hidden" 
@@ -219,12 +221,8 @@ const styles = StyleSheet.create({
     height: "100%", 
     borderRadius: 8 
   },
-  imagePlaceholder: { 
-    fontSize: 14, 
-    fontWeight: "600" 
-  },
+  imagePlaceholder: { fontWeight: "600" },
   subtitle: { 
-    fontSize: 16, 
     fontWeight: "600", 
     marginBottom: 10 
   },
@@ -232,32 +230,28 @@ const styles = StyleSheet.create({
     flexDirection: "row", 
     alignItems: "center", 
     borderWidth: 1, 
-    borderRadius: 10, 
-    padding: 12, 
     marginBottom: 10 
   },
-  servicoNome: { fontSize: 15, fontWeight: "600" },
-  servicoDescricao: { fontSize: 13, marginTop: 2 },
-  labelContainer: { flexDirection: "row", marginTop: 6 },
+  servicoNome: { fontWeight: "600" },
+  servicoDescricao: { marginTop: 2 },
+  labelContainer: { 
+    flexDirection: "row", 
+    marginTop: 6 
+  },
   label: { 
     flexDirection: "row", 
     alignItems: "center", 
-    paddingHorizontal: 8, 
     paddingVertical: 3, 
     borderRadius: 6, 
     marginRight: 6 
   },
   labelText: { 
     color: "#fff", 
-    fontSize: 12, 
-    fontWeight: "600" 
+    fontWeight: "600", 
+    fontSize: 12 
   },
-  button: { 
-    backgroundColor: "#329de4", 
-    padding: 15, 
-    borderRadius: 8, 
-    alignItems: "center", 
-    marginTop: 10 
+  buttonText: { 
+    color: "#fff", 
+    fontWeight: "bold" 
   },
-  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });
