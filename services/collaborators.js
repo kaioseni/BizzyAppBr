@@ -5,11 +5,12 @@ export async function createCollaborator({ nome, fotoUrl, idEstabelecimento, pre
   if (!nome || !nome.trim()) throw new Error("Nome do colaborador é obrigatório");
   if (!idEstabelecimento) throw new Error("ID do estabelecimento não definido");
 
-  const docId = nome.replace(/\s+/g, "");
+  const baseId = nome.replace(/\s+/g, "");
+  const uniqueId = `${baseId}_${Date.now()}`;
 
-  await setDoc(doc(db, "colaboradores", docId), {
+  await setDoc(doc(db, "colaboradores", uniqueId), {
     nome: nome.trim(),
-    foto: fotoUrl || null, 
+    foto: fotoUrl || null,
     idEstabelecimento,
     preferenciasServicos: preferenciasSelecionadas,
     createdAt: new Date(),
@@ -27,7 +28,7 @@ export async function deleteCollaborator(docId) {
 }
 
 export async function updateCollaborator(id, data) {
-  const ref = doc(db, "colaboradores", id);
+  const ref = doc(db, "colaboradores", id); 
   await updateDoc(ref, data);
 }
 
