@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Dimensions, Alert } from "react-native";
+import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Dimensions, Alert } from "react-native";
 import { Plus, User, Trash2 } from "lucide-react-native";
 import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
@@ -12,6 +12,7 @@ const APP_BLUE = "#329de4";
 export default function CollaboratorsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const { effectiveTheme } = useContext(ThemeContext);  
+
   const currentTheme = effectiveTheme === "dark"
     ? { background: "#121212", card: "#1e1e1e", text: "#fff", textSecondary: "#ccc", border: APP_BLUE }
     : { background: "#fff", card: "#f9f9f9", text: "#333", textSecondary: "#777", border: APP_BLUE };
@@ -86,9 +87,9 @@ export default function CollaboratorsScreen({ navigation }) {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.background }]} edges={['top', 'bottom']}>
       {loading && (
-        <Text style={{ textAlign: "center", marginTop: 50, fontSize: width * 0.045, color: currentTheme.textSecondary }}>
+        <Text style={{ textAlign: "center", marginTop: height * 0.1, fontSize: width * 0.045, color: currentTheme.textSecondary }}>
           Carregando colaboradores...
         </Text>
       )}
@@ -105,16 +106,16 @@ export default function CollaboratorsScreen({ navigation }) {
         data={colaboradores}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: height * 0.15 }}
       />
 
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: APP_BLUE }]}
+        style={[styles.fab, { backgroundColor: APP_BLUE, bottom: height * 0.08, width: width * 0.14, height: width * 0.14, borderRadius: width * 0.07 }]}
         onPress={() => navigation.navigate("CreateCollaboratorScreen")}
       >
-        <Plus size={28} color="#fff" />
+        <Plus size={width * 0.07} color="#fff" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: width * 0.05,
-    paddingTop: height * 0.03,
+    paddingTop: height * 0.02,
   },
   card: {
     flexDirection: "row",
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: width * 0.04,
     borderRadius: 12,
-    marginBottom: 10,
+    marginBottom: height * 0.015,
     borderWidth: 1,
   },
   cardHeader: {
@@ -139,18 +140,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
+    width: width * 0.12,
+    height: width * 0.12,
+    borderRadius: (width * 0.12) / 2,
+    marginRight: width * 0.03,
   },
   avatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: width * 0.12,
+    height: width * 0.12,
+    borderRadius: (width * 0.12) / 2,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: width * 0.03,
   },
   name: {
     fontSize: width * 0.045,
@@ -166,11 +167,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    bottom: width * 0.08,
     right: width * 0.08,
-    width: width * 0.14,
-    height: width * 0.14,
-    borderRadius: width * 0.07,
     justifyContent: "center",
     alignItems: "center",
     elevation: 6,

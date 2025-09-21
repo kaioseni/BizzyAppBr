@@ -1,7 +1,9 @@
 import React, { useContext } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
+
+const { width, height } = Dimensions.get("window");
 
 export default function ThemeSettingsScreen() {
   const { theme, effectiveTheme, changeTheme } = useContext(ThemeContext);
@@ -9,7 +11,6 @@ export default function ThemeSettingsScreen() {
   const currentTheme = effectiveTheme === "light" ? lightTheme : darkTheme;
 
   const ButtonOption = ({ title, value }) => {
-
     const isActive = value === "system" ? theme === "system" : theme === value;
 
     return (
@@ -20,6 +21,8 @@ export default function ThemeSettingsScreen() {
             backgroundColor: isActive
               ? currentTheme.button
               : currentTheme.inputBackground,
+            paddingVertical: height * 0.02,
+            width: width * 0.8,
           },
         ]}
         onPress={() => changeTheme(value)}
@@ -27,7 +30,10 @@ export default function ThemeSettingsScreen() {
         <Text
           style={[
             styles.buttonText,
-            { color: isActive ? currentTheme.buttonText : currentTheme.text },
+            {
+              color: isActive ? currentTheme.buttonText : currentTheme.text,
+              fontSize: Math.min(width * 0.045, 18),
+            },
           ]}
         >
           {title}
@@ -37,38 +43,42 @@ export default function ThemeSettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <Text style={[styles.title, { color: currentTheme.text }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: currentTheme.background }]}
+      edges={["top", "bottom"]}
+    >
+      <Text
+        style={[
+          styles.title,
+          { color: currentTheme.text, fontSize: Math.min(width * 0.05, 22), marginBottom: height * 0.04 },
+        ]}
+      >
         Tema atual: {theme === "system" ? `Baseado no sistema (${effectiveTheme})` : theme}
       </Text>
       <ButtonOption title="Claro" value="light" />
       <ButtonOption title="Escuro" value="dark" />
       <ButtonOption title="Baseado no sistema" value="system" />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: "5%",
+    justifyContent: "center",
   },
   title: {
-    fontSize: 18,
     fontWeight: "600",
-    marginBottom: 30,
+    textAlign: "center",
   },
   button: {
-    width: "80%",
-    paddingVertical: 14,
     borderRadius: 10,
-    marginVertical: 8,
+    marginVertical: height * 0.01,
     alignItems: "center",
   },
   buttonText: {
-    fontSize: 16,
     fontWeight: "600",
   },
 });

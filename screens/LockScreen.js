@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Image, Dimensions } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthContext } from "../contexts/AuthContext";
 import * as LocalAuthentication from "expo-local-authentication";
 import { ThemeContext } from "../contexts/ThemeContext";
@@ -22,6 +23,7 @@ export default function LockScreen({ navigation }) {
       try {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const enrolled = await LocalAuthentication.isEnrolledAsync();
+        setBiometricAvailable(hasHardware && enrolled);
 
         if (hasHardware && enrolled) {
           const success = await initBiometric();
@@ -30,10 +32,11 @@ export default function LockScreen({ navigation }) {
             return;
           }
         }
+
         const result = await LocalAuthentication.authenticateAsync({
           promptMessage: "Desbloqueie o app",
           fallbackLabel: "Cancelar",
-          disableDeviceFallback: false,  
+          disableDeviceFallback: false,
         });
 
         if (result.success) {
@@ -49,7 +52,6 @@ export default function LockScreen({ navigation }) {
 
     authenticate();
   }, []);
-
 
   const fallbackToPassword = async () => {
     try {
@@ -70,68 +72,71 @@ export default function LockScreen({ navigation }) {
     }
   };
 
-  if (loading) return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ActivityIndicator size="large" color={colors.text} />
-    </View>
-  );
+  if (loading)
+    return (
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.text} />
+      </SafeAreaView>
+    );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <View style={styles.centerContent}>
         <Image
           source={require("../assets/LOGO_BIZZYAPP_ICON_ID_1.png")}
-          style={[styles.logo, { width: width * 0.4, height: width * 0.4 }]}
+          style={[styles.logo, { width: width * 0.4, height: width * 0.4, maxWidth: 200, maxHeight: 200 }]}
           resizeMode="contain"
         />
-        <Text style={[styles.text, { color: colors.text, fontSize: width * 0.05 }]}>
+        <Text style={[styles.text, { color: colors.text, fontSize: Math.min(width * 0.05, 24) }]}>
           Desbloqueie o app
         </Text>
       </View>
 
       <View style={styles.bottomContent}>
-        {biometricAvailable ? (
-          <TouchableOpacity
-            style={[styles.button, { paddingVertical: height * 0.02, minWidth: width * 0.5, backgroundColor: colors.button }]}
-            onPress={fallbackToPassword}
-          >
-            <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
-              Usar senha do dispositivo
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.button, { paddingVertical: height * 0.02, minWidth: width * 0.5, backgroundColor: colors.button }]}
-            onPress={async () => {
-              try {
-                const result = await LocalAuthentication.authenticateAsync({
-                  promptMessage: "Desbloqueie o app",
-                  fallbackLabel: "Cancelar",
-                  disableDeviceFallback: false,
-                });
-                navigation.replace("MainTabs");
-              } catch {
-                navigation.replace("MainTabs");
-              }
-            }}
-          >
-            <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
-              Desbloquear
-            </Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[
+            styles.button,
+            {
+              paddingVertical: height * 0.02,
+              minWidth: width * 0.55,
+              backgroundColor: colors.button,
+              marginBottom: height * 0.02,  
+            },
+          ]}
+          onPress={biometricAvailable ? fallbackToPassword : async () => {
+            try {
+              const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: "Desbloqueie o app",
+                fallbackLabel: "Cancelar",
+                disableDeviceFallback: false,
+              });
+              navigation.replace("MainTabs");
+            } catch {
+              navigation.replace("MainTabs");
+            }
+          }}
+        >
+          <Text style={[styles.buttonText, { fontSize: Math.min(width * 0.045, 18) }]}>
+            Desbloquear
+          </Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   container: {
     flex: 1,
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 40,
+    paddingHorizontal: "5%",
+    paddingVertical: "3%",
   },
   centerContent: {
     justifyContent: "center",
@@ -141,13 +146,12 @@ const styles = StyleSheet.create({
   bottomContent: {
     width: "100%",
     alignItems: "center",
-    marginBottom: 10,
   },
   logo: {
-    marginBottom: height * 0.05,
+    marginBottom: "5%",
   },
   text: {
-    marginBottom: height * 0.03,
+    marginBottom: "3%",
     textAlign: "center",
     fontWeight: "600",
   },
@@ -158,6 +162,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
-    marginHorizontal: width * 0.05,
+    marginHorizontal: "5%",
   },
 });

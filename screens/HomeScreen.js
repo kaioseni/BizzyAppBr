@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
-import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity,
-  Dimensions, Modal, BackHandler
-} from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Modal, BackHandler } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Plus, Calendar, User } from "lucide-react-native";
 import dayjs from "dayjs";
@@ -22,7 +20,6 @@ const APP_BLUE = "#329de4";
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { user, loading } = useContext(AuthContext);
-
   const { effectiveTheme } = useContext(ThemeContext);
   const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
@@ -32,30 +29,21 @@ export default function HomeScreen() {
 
   const [servicos, setServicos] = useState([]);
   const [favoritosServicos, setFavoritosServicos] = useState(new Set());
-
   const [exitModalVisible, setExitModalVisible] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
-      const backAction = () => {
-        setExitModalVisible(true);
-        return true;
-      };
-      const backHandler = BackHandler.addEventListener(
-        "hardwareBackPress",
-        backAction
-      );
+      const backAction = () => { setExitModalVisible(true); return true; };
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
       return () => backHandler.remove();
     }, [])
   );
-
+ 
   useEffect(() => {
     if (!user?.uid) return;
 
     const unsubscribes = [];
-    const temp = {
-      padrao: [], importados: [], personalizados: [], criados: [], favoritos: new Set(),
-    };
+    const temp = { padrao: [], importados: [], personalizados: [], criados: [], favoritos: new Set() };
 
     const mergeServicos = () => {
       let all = [
@@ -64,19 +52,14 @@ export default function HomeScreen() {
         ...temp.criados.map(s => ({ ...s, tipo: "criado" })),
         ...temp.padrao.map(s => ({ ...s, tipo: "padrao" })),
       ];
-
       temp.favoritos.forEach(favId => {
-        if (!all.some(s => s.id === favId)) {
-          all.push({ id: favId, nome: favId, descricao: "(Favorito)", tipo: "favorito" });
-        }
+        if (!all.some(s => s.id === favId)) all.push({ id: favId, nome: favId, descricao: "(Favorito)", tipo: "favorito" });
       });
-
       all.sort((a, b) => {
         const aFav = temp.favoritos.has(a.id);
         const bFav = temp.favoritos.has(b.id);
         return aFav === bFav ? -1 : bFav ? 1 : 0;
       });
-
       setServicos(all);
       setFavoritosServicos(temp.favoritos);
     };
@@ -88,9 +71,7 @@ export default function HomeScreen() {
         const { ramoAtividade } = estSnap.data();
         if (!ramoAtividade) return;
 
-        const padraoSnap = await getDocs(
-          collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns")
-        );
+        const padraoSnap = await getDocs(collection(db, "ramosDeAtividade", ramoAtividade, "ServicosComuns"));
         temp.padrao = padraoSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         mergeServicos();
 
@@ -129,10 +110,9 @@ export default function HomeScreen() {
     init();
     return () => unsubscribes.forEach(u => u && u());
   }, [user?.uid]);
-
+ 
   useEffect(() => {
     if (!user?.uid) return;
-
     const startOfDay = selectedDate.startOf("day").toDate();
     const endOfDay = selectedDate.endOf("day").toDate();
 
@@ -171,20 +151,22 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <Text style={[styles.loadingText, { color: currentTheme.text }]}>
-        Carregando usuário...
-      </Text>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: currentTheme.background }]}>
+        <Text style={[styles.loadingText, { color: currentTheme.text }]}>
+          Carregando usuário...
+        </Text>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.background }]} edges={['top', 'bottom']}>
       <TouchableOpacity
         style={[styles.dateButton, { backgroundColor: APP_BLUE }]}
         onPress={() => setShowPicker(true)}
       >
-        <Calendar size={20} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.dateButtonText}>
+        <Calendar size={width * 0.05} color="#fff" style={{ marginRight: width * 0.02 }} />
+        <Text style={[styles.dateButtonText, { fontSize: Math.min(width * 0.042, 18) }]}>
           {selectedDate.format("DD/MM/YYYY")}
         </Text>
       </TouchableOpacity>
@@ -199,68 +181,71 @@ export default function HomeScreen() {
       )}
 
       <FlatList
-  data={agendamentos}
-  keyExtractor={item => item.id}
-  contentContainerStyle={{ paddingBottom: 120 }}
-  renderItem={({ item }) => {
-    const atrasado = isLate(item.dataHora); // já calcula se está atrasado
+        data={agendamentos}
+        keyExtractor={item => item.id}
+        contentContainerStyle={{ paddingBottom: height * 0.2 }}
+        renderItem={({ item }) => {
+          const atrasado = isLate(item.dataHora);
 
-    return (
-      <TouchableOpacity
-        onPress={() => navigation.navigate("ManageService", { agendamento: item })}
-        style={[
-          styles.card,
-          { backgroundColor: currentTheme.card, borderColor: APP_BLUE },
-          atrasado && { borderColor: "red", backgroundColor: "#fec6c6ff" } // card atrasado
-        ]}
-      >
-        <View style={styles.cardHeader}>
-          <Text style={[styles.name, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
-            {item.nomeCliente}
-          </Text>
-          <Text style={[styles.time, { color: APP_BLUE }]}>
-            {item.dataHora instanceof Date
-              ? dayjs(item.dataHora).format("HH:mm")
-              : dayjs(item.dataHora.toDate()).format("HH:mm")}
-          </Text>
-        </View>
+          return (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ManageService", { agendamento: item })}
+              style={[
+                styles.card,
+                { backgroundColor: currentTheme.card, borderColor: APP_BLUE },
+                atrasado && { borderColor: "red", backgroundColor: "#fec6c6ff" }
+              ]}
+            >
+              <View style={styles.cardHeader}>
+                <Text style={[styles.name, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
+                  {item.nomeCliente}
+                </Text>
+                <Text style={[styles.time, { color: APP_BLUE }]}>
+                  {item.dataHora instanceof Date
+                    ? dayjs(item.dataHora).format("HH:mm")
+                    : dayjs(item.dataHora.toDate()).format("HH:mm")}
+                </Text>
+              </View>
 
-        {item.servico && (
-          <Text style={[styles.servico, { color: APP_BLUE }]}>
-            Serviço: {getNomeServico(item.servico)}
-          </Text>
-        )}
+              {item.servico && (
+                <Text style={[styles.servico, { color: APP_BLUE }]}>
+                  Serviço: {getNomeServico(item.servico)}
+                </Text>
+              )}
 
-        {item.colaborador && (
-          <View style={styles.colaboradorWrapper}>
-            <User size={14} color={APP_BLUE} style={{ marginRight: 6 }} />
-            <Text style={[styles.colaborador, { color: APP_BLUE }]}>
-              {item.colaborador}
+              {item.colaborador && (
+                <View style={styles.colaboradorWrapper}>
+                  <User size={width * 0.035} color={APP_BLUE} style={{ marginRight: width * 0.015 }} />
+                  <Text style={[styles.colaborador, { color: APP_BLUE }]}>
+                    {item.colaborador}
+                  </Text>
+                </View>
+              )}
+
+              <Text style={[styles.phone, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
+                {item.telefone}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+        ItemSeparatorComponent={() => <View style={{ height: height * 0.01 }} />}
+        ListEmptyComponent={
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", height: height * 0.6 }}>
+            <Text style={{ fontSize: Math.min(width * 0.045, 18), textAlign: "center", color: currentTheme.text }}>
+              Nenhum agendamento para este dia
             </Text>
           </View>
-        )}
-
-        <Text style={[styles.phone, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
-          {item.telefone}
-        </Text>
-      </TouchableOpacity>
-    );
-  }}
-  ItemSeparatorComponent={() => <View style={styles.separator} />}
-  ListEmptyComponent={
-    <View style={styles.emptyContainer}>
-      <Text style={[styles.emptyText, { color: currentTheme.text }]}>
-        Nenhum agendamento para este dia
-      </Text>
-    </View>
-  }
-/>
+        }
+      />
 
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: APP_BLUE }]}
+        style={[
+          styles.fab,
+          { backgroundColor: APP_BLUE, bottom: height * 0.05, right: width * 0.08, width: width * 0.14, height: width * 0.14, borderRadius: width * 0.07 }
+        ]}
         onPress={() => navigation.navigate("AppointmentsScreen")}
       >
-        <Plus size={28} color="#fff" />
+        <Plus size={width * 0.07} color="#fff" />
       </TouchableOpacity>
 
       <Modal
@@ -271,24 +256,24 @@ export default function HomeScreen() {
       >
         <View style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
           <View style={[styles.modalContainer, { backgroundColor: currentTheme.card }]}>
-            <Text style={[styles.modalText, { color: currentTheme.text }]}>
+            <Text style={[styles.modalText, { color: currentTheme.text, fontSize: Math.min(width * 0.045, 18) }]}>
               Você está prestes a sair do app
             </Text>
             <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: "#329de4" }]}
+              style={[styles.modalButton, { backgroundColor: APP_BLUE }]}
               onPress={() => BackHandler.exitApp()}
             >
-              <Text style={styles.modalButtonText}>Sair</Text>
+              <Text style={[styles.modalButtonText, { fontSize: Math.min(width * 0.045, 18) }]}>Sair</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setExitModalVisible(false)}>
-              <Text style={[styles.cancelText, { color: currentTheme.text }]}>
+              <Text style={[styles.cancelText, { color: currentTheme.text, fontSize: Math.min(width * 0.042, 16) }]}>
                 Agora Não
               </Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

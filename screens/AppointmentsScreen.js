@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, ScrollView, KeyboardAvoidingView, Dimensions } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaskedTextInput } from "react-native-mask-text";
 import { Picker } from "@react-native-picker/picker";
@@ -12,10 +12,11 @@ import { createAgendamento } from "../services/appointments";
 import { lightTheme, darkTheme } from "../utils/themes";
 
 const APP_BLUE = "#329de4";
+const { width, height } = Dimensions.get("window");
 
 export default function AppointmentsScreen({ navigation }) {
   const { user } = useContext(AuthContext);
-  const { effectiveTheme } = useContext(ThemeContext);  
+  const { effectiveTheme } = useContext(ThemeContext);
   const currentTheme = effectiveTheme === "dark" ? darkTheme : lightTheme;
 
   const [nomeCliente, setNomeCliente] = useState("");
@@ -32,10 +33,9 @@ export default function AppointmentsScreen({ navigation }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const [favoritosIds, setFavoritosIds] = useState(new Set());
-
+ 
   useEffect(() => {
     if (!user?.uid) return;
-
     const unsubscribes = [];
     const temp = { padrao: [], importados: [], personalizados: [], criados: [], favoritos: new Set() };
 
@@ -46,19 +46,14 @@ export default function AppointmentsScreen({ navigation }) {
         ...temp.criados.map(s => ({ ...s, tipo: "criado" })),
         ...temp.padrao.map(s => ({ ...s, tipo: "padrao" })),
       ];
-
       temp.favoritos.forEach(favId => {
-        if (!all.some(s => s.id === favId)) {
-          all.push({ id: favId, nome: favId, descricao: "(Favorito)", tipo: "favorito" });
-        }
+        if (!all.some(s => s.id === favId)) all.push({ id: favId, nome: favId, descricao: "(Favorito)", tipo: "favorito" });
       });
-
       all.sort((a, b) => {
         const aFav = temp.favoritos.has(a.id);
         const bFav = temp.favoritos.has(b.id);
         return aFav === bFav ? 0 : aFav ? -1 : 1;
       });
-
       setServicos(all);
     };
 
@@ -107,10 +102,9 @@ export default function AppointmentsScreen({ navigation }) {
     init();
     return () => unsubscribes.forEach(u => u && u());
   }, [user?.uid]);
-
+ 
   useEffect(() => {
     if (!user?.uid) return;
-
     const fetchColaboradores = async () => {
       try {
         const colSnap = await getDocs(collection(db, "colaboradores"));
@@ -121,7 +115,6 @@ export default function AppointmentsScreen({ navigation }) {
             nome: doc.data().nome,
             preferenciasServicos: doc.data().preferenciasServicos || [],
           }));
-
         if (servicoSelecionado) {
           lista.sort((a, b) => {
             const aPref = a.preferenciasServicos.some(s => s.id === servicoSelecionado);
@@ -129,14 +122,12 @@ export default function AppointmentsScreen({ navigation }) {
             return aPref === bPref ? 0 : aPref ? -1 : 1;
           });
         }
-
         setColaboradores(lista);
       } catch (err) {
         console.error("Erro ao carregar colaboradores:", err);
         Toast.show({ type: "error", text1: "Erro ao carregar colaboradores" });
       }
     };
-
     fetchColaboradores();
   }, [user?.uid, servicoSelecionado]);
 
@@ -171,7 +162,6 @@ export default function AppointmentsScreen({ navigation }) {
 
   const handleAgendar = async () => {
     if (!validarCampos()) return;
-
     try {
       await createAgendamento({
         userAux: user.uid,
@@ -181,9 +171,7 @@ export default function AppointmentsScreen({ navigation }) {
         servico: servicoSelecionado,
         colaborador: colaboradorSelecionado,
       });
-
       Toast.show({ type: "success", text1: "Agendamento cadastrado com sucesso!" });
-
       setNomeCliente("");
       setTelefone("");
       setDataHora(new Date());
@@ -196,88 +184,84 @@ export default function AppointmentsScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <TextInput
-        placeholder="Nome do cliente"
-        placeholderTextColor={currentTheme.textSecondary}
-        value={nomeCliente}
-        onChangeText={setNomeCliente}
-        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: APP_BLUE }]}
-      />
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: width * 0.05, paddingBottom: height * 0.18, }}>
+        <TextInput
+          placeholder="Nome do cliente"
+          placeholderTextColor={currentTheme.textSecondary}
+          value={nomeCliente}
+          onChangeText={setNomeCliente}
+          style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: APP_BLUE, fontSize: Math.min(width * 0.045, 18) }]}
+        />
 
-      <MaskedTextInput
-        mask="55 (99) 9 9999-9999"
-        keyboardType="phone-pad"
-        placeholder="Telefone do cliente"
-        placeholderTextColor={currentTheme.textSecondary}
-        value={telefone}
-        onChangeText={setTelefone}
-        style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: APP_BLUE }]}
-      />
+        <MaskedTextInput
+          mask="55 (99) 9 9999-9999"
+          keyboardType="phone-pad"
+          placeholder="Telefone do cliente"
+          placeholderTextColor={currentTheme.textSecondary}
+          value={telefone}
+          onChangeText={setTelefone}
+          style={[styles.input, { backgroundColor: currentTheme.card, color: currentTheme.text, borderColor: APP_BLUE, fontSize: Math.min(width * 0.045, 18) }]}
+        />
 
-      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
-        <Picker
-          selectedValue={servicoSelecionado}
-          onValueChange={setServicoSelecionado}
-          dropdownIconColor={currentTheme.text}
-          style={{ color: servicoSelecionado ? currentTheme.text : currentTheme.textSecondary }}
-        >
-          <Picker.Item label="Selecione um serviço" value="" enabled={false} color={currentTheme.textSecondary} />
-          {servicos.map(s => (
-            <Picker.Item key={`${s.id}-${s.tipo}`} label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`} value={s.id} color={currentTheme.textDrow} />
-          ))}
-        </Picker>
-      </View>
+        <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
+          <Picker
+            selectedValue={servicoSelecionado}
+            onValueChange={setServicoSelecionado}
+            dropdownIconColor={currentTheme.text}
+            style={{ color: servicoSelecionado ? currentTheme.text : currentTheme.textSecondary, fontSize: Math.min(width * 0.045, 18) }}
+          >
+            <Picker.Item label="Selecione um serviço" value="" enabled={false} color={currentTheme.textSecondary} />
+            {servicos.map(s => (
+              <Picker.Item key={`${s.id}-${s.tipo}`} label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`} value={s.id} color={currentTheme.textDrow} />
+            ))}
+          </Picker>
+        </View>
 
-      <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
-        <Picker
-          selectedValue={colaboradorSelecionado}
-          onValueChange={setColaboradorSelecionado}
-          dropdownIconColor={currentTheme.text}
-          style={{ color: colaboradorSelecionado ? currentTheme.text : currentTheme.textSecondary }}
-        >
-          <Picker.Item label="Selecione um colaborador (opcional)" value="" color={currentTheme.textSecondary} />
-          {colaboradores.map(c => (
-            <Picker.Item key={c.id} label={c.nome} value={c.nome} color={currentTheme.textDrow} />
-          ))}
-        </Picker>
-      </View>
+        <View style={[styles.pickerWrapper, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
+          <Picker
+            selectedValue={colaboradorSelecionado}
+            onValueChange={setColaboradorSelecionado}
+            dropdownIconColor={currentTheme.text}
+            style={{ color: colaboradorSelecionado ? currentTheme.text : currentTheme.textSecondary, fontSize: Math.min(width * 0.045, 18) }}
+          >
+            <Picker.Item label="Selecione um colaborador (opcional)" value="" color={currentTheme.textSecondary} />
+            {colaboradores.map(c => (
+              <Picker.Item key={c.id} label={c.nome} value={c.nome} color={currentTheme.textDrow} />
+            ))}
+          </Picker>
+        </View>
 
-      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
-        <Text style={{ color: currentTheme.text }}>{dataHora.toLocaleString()}</Text>
+        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, { backgroundColor: currentTheme.card, borderColor: APP_BLUE }]}>
+          <Text style={{ color: currentTheme.text, fontSize: Math.min(width * 0.045, 18) }}>{dataHora.toLocaleString()}</Text>
+        </TouchableOpacity>
+        {showDatePicker && <DateTimePicker value={dataHora} mode="date" display="default" onChange={onDateChange} />}
+        {showTimePicker && <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={onTimeChange} />}
+      </ScrollView>
+
+      <TouchableOpacity
+        style={[styles.btn, { backgroundColor: APP_BLUE, position: "absolute", bottom: height * 0.07, left: width * 0.05, right: width * 0.05, paddingVertical: height * 0.02 }]}
+        onPress={handleAgendar}
+      >
+        <Text style={[styles.btnText, { fontSize: Math.min(width * 0.048, 18) }]}>Salvar Agendamento</Text>
       </TouchableOpacity>
-      {showDatePicker && <DateTimePicker value={dataHora} mode="date" display="default" onChange={onDateChange} />}
-      {showTimePicker && <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={onTimeChange} />}
-
-      <TouchableOpacity style={[styles.btn, { backgroundColor: APP_BLUE }]} onPress={handleAgendar}>
-        <Text style={[styles.btnText, { color: "#fff" }]}>Salvar Agendamento</Text>
-      </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20, 
-    justifyContent: "center" 
-  },
   input: { 
     borderWidth: 1, 
-    borderRadius: 8, 
-    padding: 12, 
+    borderRadius: 10, 
+    paddingHorizontal: 15, 
+    paddingVertical: 12, 
     marginBottom: 15 
   },
   pickerWrapper: { 
     borderWidth: 1, 
-    borderRadius: 8, 
+    borderRadius: 10, 
     marginBottom: 15 
   },
-  btn: { 
-    padding: 15,
-    borderRadius: 8, 
-    alignItems: "center", 
-    marginTop: 10 
-  },
-  btnText: { fontWeight: "bold", fontSize: 16 },
+  btn: { alignItems: "center", borderRadius: 10 },
+  btnText: { color: "#fff", fontWeight: "bold" },
 });
