@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Modal, BackHandler } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { Plus, Calendar, User } from "lucide-react-native";
+import { Plus, Calendar, User, Phone } from "lucide-react-native";
 import dayjs from "dayjs";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AuthContext } from "../contexts/AuthContext";
@@ -38,7 +38,7 @@ export default function HomeScreen() {
       return () => backHandler.remove();
     }, [])
   );
- 
+
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -110,7 +110,7 @@ export default function HomeScreen() {
     init();
     return () => unsubscribes.forEach(u => u && u());
   }, [user?.uid]);
- 
+
   useEffect(() => {
     if (!user?.uid) return;
     const startOfDay = selectedDate.startOf("day").toDate();
@@ -221,10 +221,12 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               )}
-
-              <Text style={[styles.phone, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
-                {item.telefone}
-              </Text>
+              <View style={styles.colaboradorWrapper}>
+                <Phone size={width * 0.035} color={APP_BLUE} style={{ marginRight: width * 0.015 }} />
+                <Text style={[styles.phone, { color: atrasado ? currentTheme.textDrow : currentTheme.text }]}>
+                  {item.telefone}
+                </Text>
+              </View>
             </TouchableOpacity>
           );
         }}
