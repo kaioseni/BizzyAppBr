@@ -23,33 +23,40 @@ export default function AboutScreen() {
           📌 O que é?
         </Text>
         <Text style={[styles.text, { color: currentTheme.text }]}>
-          O BizzyApp é um aplicativo voltado para gestão de agendamentos de pequenas empresas, 
-          criado como parte de um trabalho de pós-graduação e em evolução para se tornar um 
-          produto completo.
+          O BizzyApp é um aplicativo completo para gestão de agendamentos e organização de pequenas empresas, 
+          com funcionalidades voltadas para eficiência, controle e experiência do usuário.
         </Text>
 
         <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
-          ✨ Funcionalidades atuais
+          ✨ Funcionalidades
         </Text>
         <Text style={[styles.text, { color: currentTheme.textSecondary }]}>
-          - Cadastro e login de usuários com Firebase Authentication {"\n"}
-          - Suporte a login via biometria {"\n"}
-          - Onboarding inicial com carrossel {"\n"}
-          - Agendamento de clientes com data, hora, serviço e colaborador {"\n"}
+          - Cadastro e login de usuários via Firebase Authentication {"\n"}
+          - Login com e-mail/senha e suporte à autenticação biométrica {"\n"}
+          - Onboarding inicial com carrossel explicativo {"\n"}
+          - Cadastro e edição de perfil de estabelecimento {"\n"}
+          - Upload e gerenciamento de logotipo do estabelecimento {"\n"}
+          - Gerenciamento de endereço completo com busca via CEP {"\n"}
+          - Cadastro e seleção de ramos de atividade do estabelecimento {"\n"}
+          - Criação, edição e exclusão de agendamentos {"\n"}
+          - Agendamento com data, hora, serviço e colaborador {"\n"}
           - Listagem de agendamentos em tempo real, ordenados por data/hora {"\n"}
           - Indicação visual de agendamentos atrasados {"\n"}
-          - Integração com Firestore (coleção {"agendamentos"})
+          - Tela de bloqueio com senha e opção de exibir/esconder senha {"\n"}
+          - Redefinição de senha via e-mail {"\n"}
+          - Tema claro/escuro dinâmico em todo o app {"\n"}
+          - Integração completa com Firebase Firestore para persistência de dados
         </Text>
 
         <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
-          🚀 Roadmap
+          🚀 Roadmap futuro
         </Text>
         <Text style={[styles.text, { color: currentTheme.textSecondary }]}>
-          - Implementar Bottom Tabs (Início + Mais opções) {"\n"}
-          - Criar menu de funcionalidades extras na aba "Mais" {"\n"}
-          - Melhorias no fluxo de login e biometria {"\n"}
-          - Refinar telas de perfil, configurações e notificações {"\n"}
-          - Publicar em ambiente de testes (Beta)
+          - Implementar relatórios avançados de agendamento {"\n"}
+          - Melhorias na experiência de usuário e fluxos do app {"\n"}
+          - Possibilidade de integração com pagamentos online {"\n"}
+          - Recursos de marketing e fidelização de clientes {"\n"}
+          - Publicação em ambiente de testes (Beta) e em produção
         </Text>
 
         <Text style={[styles.sectionTitle, { color: currentTheme.text }]}>
@@ -61,7 +68,7 @@ export default function AboutScreen() {
         </Text>
 
         <Text style={[styles.footer, { color: currentTheme.textSecondary }]}>
-          Versão 0.1.0 • Em desenvolvimento
+          Versão 1.0.0 • Aplicativo concluído
         </Text>
       </ScrollView>
     </SafeAreaView>

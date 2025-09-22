@@ -9,6 +9,7 @@ import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
 import { MaskedTextInput } from "react-native-mask-text";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
@@ -23,7 +24,7 @@ const CLOUDINARY_UPLOAD_PRESET = "colaboradores";
 const { width, height } = Dimensions.get("window");
 
 export default function Register({ navigation }) {
-  const { register, promptEnableBiometrics } = useContext(AuthContext);
+  const { register, promptEnableBiometrics, setUser } = useContext(AuthContext);
   const { effectiveTheme } = useContext(ThemeContext);
   const currentTheme = effectiveTheme === "light" ? lightTheme : darkTheme;
 
@@ -40,14 +41,13 @@ export default function Register({ navigation }) {
   const [loadingRegister, setLoadingRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-   
   const [senhaStatus, setSenhaStatus] = useState({
     minLength: false,
     hasUpperCase: false,
     hasLowerCase: false,
     hasNumber: false,
     hasSpecialChar: false,
-  }); 
+  });
 
   const [senhaFocused, setSenhaFocused] = useState(false);
 
@@ -57,6 +57,23 @@ export default function Register({ navigation }) {
     hasLowerCase: (senha) => /[a-z]/.test(senha),
     hasNumber: (senha) => /\d/.test(senha),
     hasSpecialChar: (senha) => /[!@#$%^&*(),.?":{}|<>]/.test(senha),
+  };
+
+  const getFirebaseErrorMessage = (error) => {
+    switch (error.code) {
+      case "auth/invalid-email":
+        return "Endereço de e-mail inválido";
+      case "auth/email-already-in-use":
+        return "Este e-mail já está em uso";
+      case "auth/weak-password":
+        return "Senha muito fraca";
+      case "auth/user-not-found":
+        return "Usuário não encontrado";
+      case "auth/wrong-password":
+        return "Senha incorreta";
+      default:
+        return error.message || "Ocorreu um erro ao cadastrar";
+    }
   };
 
   const handleEnderecoChange = (field, value) =>
@@ -141,18 +158,21 @@ export default function Register({ navigation }) {
     setLoadingRegister(true);
 
     try {
-      await register(
+      const newUser = await register(
         email,
         password,
         { nomeEstabelecimento, telefone, logo, ramoAtividade, ...endereco },
         uploadImageToCloudinary
       );
+ 
+      await AsyncStorage.setItem("uid", newUser.uid);
+      setUser({ uid: newUser.uid, email: newUser.email });
 
       showToast("success", "Sucesso!", "Usuário criado com sucesso 🎉");
-      await promptEnableBiometrics();
+      await promptEnableBiometrics(newUser.uid);
       navigation.navigate("MainTabs", { screen: "Home" });
     } catch (error) {
-      const message = error.message || "Erro no cadastro.";
+      const message = getFirebaseErrorMessage(error);
       showToast("error", "Erro no cadastro", message);
     } finally {
       setLoadingRegister(false);
@@ -259,7 +279,7 @@ export default function Register({ navigation }) {
             style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
             placeholderTextColor={currentTheme.text + "99"}
           />
- 
+
           <View style={[styles.passwordContainer, { borderColor: currentTheme.primary }]}>
             <TextInput
               placeholder="Senha"
@@ -279,7 +299,7 @@ export default function Register({ navigation }) {
               )}
             </TouchableOpacity>
           </View>
- 
+
           {senhaFocused && (
             <View style={{ width: width * 0.9, marginBottom: height * 0.02 }}>
               {Object.entries(senhaStatus).map(([key, valid]) => {
