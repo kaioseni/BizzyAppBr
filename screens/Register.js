@@ -1,6 +1,9 @@
 import { useContext, useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react-native";
-import { TextInput, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Dimensions, TouchableOpacity, Image, View } from "react-native";
+import {
+  TextInput, Text, StyleSheet, ScrollView, KeyboardAvoidingView,
+  Platform, Dimensions, TouchableOpacity, Image, View
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
@@ -32,16 +35,29 @@ export default function Register({ navigation }) {
   const [ramoAtividade, setRamoAtividade] = useState("");
   const [opcoesRamo, setOpcoesRamo] = useState([]);
   const [endereco, setEndereco] = useState({
-    cep: "",
-    logradouro: "",
-    bairro: "",
-    cidade: "",
-    estado: "",
-    numero: "",
-    complemento: "",
+    cep: "", logradouro: "", bairro: "", cidade: "", estado: "", numero: "", complemento: "",
   });
   const [loadingRegister, setLoadingRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+   
+  const [senhaStatus, setSenhaStatus] = useState({
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+  }); 
+
+  const [senhaFocused, setSenhaFocused] = useState(false);
+
+  const senhaRegras = {
+    minLength: (senha) => senha.length >= 8,
+    hasUpperCase: (senha) => /[A-Z]/.test(senha),
+    hasLowerCase: (senha) => /[a-z]/.test(senha),
+    hasNumber: (senha) => /\d/.test(senha),
+    hasSpecialChar: (senha) => /[!@#$%^&*(),.?":{}|<>]/.test(senha),
+  };
 
   const handleEnderecoChange = (field, value) =>
     setEndereco((prev) => ({ ...prev, [field]: value }));
@@ -87,6 +103,11 @@ export default function Register({ navigation }) {
       showToast("error", "Ramo de atividade", "Selecione uma opção");
       return false;
     }
+    const todasRegrasOk = Object.values(senhaStatus).every((v) => v === true);
+    if (!todasRegrasOk) {
+      showToast("error", "Senha fraca", "Sua senha não atende a todos os requisitos.");
+      return false;
+    }
     return true;
   };
 
@@ -102,6 +123,17 @@ export default function Register({ navigation }) {
     const data = await res.json();
     if (!data.secure_url) throw new Error(JSON.stringify(data));
     return data.secure_url;
+  };
+
+  const handlePasswordChange = (senha) => {
+    setPassword(senha);
+    setSenhaStatus({
+      minLength: senhaRegras.minLength(senha),
+      hasUpperCase: senhaRegras.hasUpperCase(senha),
+      hasLowerCase: senhaRegras.hasLowerCase(senha),
+      hasNumber: senhaRegras.hasNumber(senha),
+      hasSpecialChar: senhaRegras.hasSpecialChar(senha),
+    });
   };
 
   const handleRegister = async () => {
@@ -227,15 +259,17 @@ export default function Register({ navigation }) {
             style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
             placeholderTextColor={currentTheme.text + "99"}
           />
-
+ 
           <View style={[styles.passwordContainer, { borderColor: currentTheme.primary }]}>
             <TextInput
               placeholder="Senha"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={handlePasswordChange}
               secureTextEntry={!showPassword}
               style={[styles.inputPassword, { color: currentTheme.text }]}
               placeholderTextColor={currentTheme.text + "99"}
+              onFocus={() => setSenhaFocused(true)}
+              onBlur={() => setSenhaFocused(false)}
             />
             <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
               {showPassword ? (
@@ -245,6 +279,29 @@ export default function Register({ navigation }) {
               )}
             </TouchableOpacity>
           </View>
+ 
+          {senhaFocused && (
+            <View style={{ width: width * 0.9, marginBottom: height * 0.02 }}>
+              {Object.entries(senhaStatus).map(([key, valid]) => {
+                let label;
+                switch (key) {
+                  case "minLength": label = "Mínimo 8 caracteres"; break;
+                  case "hasUpperCase": label = "Uma letra maiúscula"; break;
+                  case "hasLowerCase": label = "Uma letra minúscula"; break;
+                  case "hasNumber": label = "Um número"; break;
+                  case "hasSpecialChar": label = "Um caractere especial"; break;
+                }
+                return (
+                  <Text
+                    key={key}
+                    style={{ color: valid ? "green" : "red", fontSize: Math.min(width * 0.035, 14) }}
+                  >
+                    {valid ? "✔" : "✖"} {label}
+                  </Text>
+                );
+              })}
+            </View>
+          )}
 
           <TouchableOpacity
             style={[styles.botao, { backgroundColor: loadingRegister ? "#7fbdea" : currentTheme.primary }]}
