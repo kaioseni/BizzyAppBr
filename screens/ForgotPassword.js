@@ -1,16 +1,5 @@
 import { useState, useContext } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from "react-native";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
@@ -45,6 +34,7 @@ export default function ForgotPassword({ navigation }) {
         text1: "E-mail enviado!",
         text2: "Verifique sua caixa de entrada.",
       });
+      navigation.goBack();  
     } catch (error) {
       let message = "";
       if (error.code === "auth/user-not-found") message = "Usuário não encontrado.";
@@ -60,14 +50,18 @@ export default function ForgotPassword({ navigation }) {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: currentTheme.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? height * 0.1 : 0}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={[styles.title, { color: APP_BLUE }]}>Recuperar Senha 🔑</Text>
+        <View style={{ alignItems: "center", marginBottom: height * 0.04 }}>
+          <Text style={[styles.title, { color: APP_BLUE }]}>
+            Recuperar Senha 🔑
+          </Text>
+        </View>
 
         <TextInput
           placeholder="Digite seu e-mail"
@@ -93,14 +87,8 @@ export default function ForgotPassword({ navigation }) {
           disabled={loading}
         >
           {loading ? (
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <ActivityIndicator color="#fff" style={{ marginRight: 10 }} />
+            <View style={styles.loadingWrapper}>
+              <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
               <Text style={styles.buttonText}>Enviando...</Text>
             </View>
           ) : (
@@ -124,36 +112,40 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: width * 0.08,
-    paddingVertical: height * 0.08,
+    paddingVertical: height * 0.05,
   },
   title: {
-    fontSize: width * 0.065,
+    fontSize: width * 0.07,
     fontWeight: "600",
-    marginBottom: 40,
     textAlign: "center",
   },
   input: {
-    height: 50,
+    height: height * 0.065,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    marginBottom: 20,
+    borderRadius: width * 0.025,
+    paddingHorizontal: width * 0.04,
+    fontSize: width * 0.04,
+    marginBottom: height * 0.025,
   },
   button: {
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginBottom: 20,
+    paddingVertical: height * 0.02,
+    borderRadius: width * 0.025,
+    marginBottom: height * 0.02,
     alignItems: "center",
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: width * 0.045,
     fontWeight: "bold",
   },
   backText: {
-    fontSize: 14,
+    fontSize: width * 0.04,
     textAlign: "center",
-    marginTop: 10,
+    marginTop: height * 0.015,
+  },
+  loadingWrapper: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

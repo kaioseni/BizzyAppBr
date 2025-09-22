@@ -5,6 +5,8 @@ import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import Toast from "react-native-toast-message";
 import { MaskedTextInput } from "react-native-mask-text";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { AuthContext } from "../contexts/AuthContext";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { lightTheme, darkTheme } from "../utils/themes";
@@ -39,7 +41,6 @@ export default function Register({ navigation }) {
     complemento: "",
   });
   const [loadingRegister, setLoadingRegister] = useState(false);
-
   const [showPassword, setShowPassword] = useState(false);
 
   const handleEnderecoChange = (field, value) =>
@@ -55,7 +56,6 @@ export default function Register({ navigation }) {
       allowsEditing: true,
       quality: 0.7,
     });
-    console.log("1 ", result)
     if (!result.canceled) setLogo(result.assets[0].uri);
   };
 
@@ -91,11 +91,10 @@ export default function Register({ navigation }) {
   };
 
   const uploadImageToCloudinary = async (logoUri) => {
-  const formData = new FormData();
-  formData.append("file", { uri: logoUri, type: "image/jpeg", name: "logo.jpg" });
-  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    const formData = new FormData();
+    formData.append("file", { uri: logoUri, type: "image/jpeg", name: "logo.jpg" });
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
-  try {
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
       method: "POST",
       body: formData,
@@ -103,37 +102,30 @@ export default function Register({ navigation }) {
     const data = await res.json();
     if (!data.secure_url) throw new Error(JSON.stringify(data));
     return data.secure_url;
-  } catch (err) {
-    console.error("Erro upload Cloudinary:", err);
-    throw err;
-  }
-};
+  };
 
-const handleRegister = async () => {
-  if (!validateFields()) return;
-  setLoadingRegister(true);
+  const handleRegister = async () => {
+    if (!validateFields()) return;
+    setLoadingRegister(true);
 
-  try {
-    await register(email, password, {
-      nomeEstabelecimento,
-      telefone,
-      logo,
-      ramoAtividade,
-      ...endereco,
-    }, uploadImageToCloudinary);
+    try {
+      await register(
+        email,
+        password,
+        { nomeEstabelecimento, telefone, logo, ramoAtividade, ...endereco },
+        uploadImageToCloudinary
+      );
 
-    showToast("success", "Sucesso!", "Usuário criado com sucesso 🎉");
-    await promptEnableBiometrics();
-    navigation.navigate("MainTabs", { screen: "Home" });
-
-  } catch (error) {
-    const message = error.message || "Erro no cadastro.";
-    showToast("error", "Erro no cadastro", message);
-    console.error("Erro handleRegister:", error);
-  } finally {
-    setLoadingRegister(false);
-  }
-};
+      showToast("success", "Sucesso!", "Usuário criado com sucesso 🎉");
+      await promptEnableBiometrics();
+      navigation.navigate("MainTabs", { screen: "Home" });
+    } catch (error) {
+      const message = error.message || "Erro no cadastro.";
+      showToast("error", "Erro no cadastro", message);
+    } finally {
+      setLoadingRegister(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRamos = async () => {
@@ -150,125 +142,123 @@ const handleRegister = async () => {
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: currentTheme.background }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={{ flex: 1, backgroundColor: currentTheme.background }} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? height * 0.08 : 0}
       >
-        <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
-          {logo ? (
-            <Image source={{ uri: logo }} style={styles.logo} />
-          ) : (
-            <Text style={[styles.imagePlaceholder, { color: currentTheme.text }]}>
-              Selecionar logotipo
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        <TextInput
-          placeholder="Nome do Estabelecimento"
-          value={nomeEstabelecimento}
-          onChangeText={setNomeEstabelecimento}
-          style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
-          placeholderTextColor={currentTheme.text + "99"}
-        />
-
-        <MaskedTextInput
-          mask="55 (99) 9 9999-9999"
-          keyboardType="phone-pad"
-          placeholder="Telefone"
-          value={telefone}
-          onChangeText={setTelefone}
-          style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
-          placeholderTextColor={currentTheme.text + "99"}
-        />
-
-        <View
-          style={[
-            styles.pickerContainer,
-            { borderColor: currentTheme.primary, backgroundColor: currentTheme.background },
-          ]}
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Picker
-            selectedValue={ramoAtividade}
-            onValueChange={setRamoAtividade}
-            style={{ width: "100%", height: "100%", color: currentTheme.text }}
-            dropdownIconColor={currentTheme.text}
-          >
-            <Picker.Item label="Selecione o ramo de atividade" value="" enabled={false} />
-            {opcoesRamo.map((ramo) => (
-              <Picker.Item key={ramo.id} label={ramo.Nome} value={ramo.id} />
-            ))}
-          </Picker>
-        </View>
+          <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
+            {logo ? (
+              <Image source={{ uri: logo }} style={styles.logo} />
+            ) : (
+              <Text style={[styles.imagePlaceholder, { color: currentTheme.text }]}>
+                Selecionar logotipo
+              </Text>
+            )}
+          </TouchableOpacity>
 
-        <MaskedTextInput
-          mask="99999-999"
-          keyboardType="number-pad"
-          placeholder="CEP"
-          value={endereco.cep}
-          onChangeText={(v) => handleEnderecoChange("cep", v)}
-          onEndEditing={handleBuscarCEP}
-          style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
-          placeholderTextColor={currentTheme.text + "99"}
-        />
-
-        {["logradouro", "bairro", "cidade", "estado", "numero", "complemento"].map((field) => (
           <TextInput
-            key={field}
-            placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-            value={endereco[field]}
-            onChangeText={(v) => handleEnderecoChange(field, v)}
-            keyboardType={field === "numero" ? "number-pad" : "default"}
+            placeholder="Nome do Estabelecimento"
+            value={nomeEstabelecimento}
+            onChangeText={setNomeEstabelecimento}
             style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
             placeholderTextColor={currentTheme.text + "99"}
           />
-        ))}
 
-        <TextInput
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
-          placeholderTextColor={currentTheme.text + "99"}
-        />
-
-        <View style={[styles.passwordContainer, { borderColor: currentTheme.primary }]}>
-          <TextInput
-            placeholder="Senha"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            style={[styles.inputPassword, { color: currentTheme.text }]}
+          <MaskedTextInput
+            mask="55 (99) 9 9999-9999"
+            keyboardType="phone-pad"
+            placeholder="Telefone"
+            value={telefone}
+            onChangeText={setTelefone}
+            style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
             placeholderTextColor={currentTheme.text + "99"}
           />
-          <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
-            {showPassword ? (
-              <Eye size={20} color="#3498db" />
-            ) : (
-              <EyeOff size={20} color="#3498db" />
-            )}
-          </TouchableOpacity>
-        </View>
 
-        <TouchableOpacity
-          style={[styles.botao, { backgroundColor: loadingRegister ? "#7fbdea" : currentTheme.primary }]}
-          onPress={handleRegister}
-          activeOpacity={0.8}
-          disabled={loadingRegister}
-        >
-          <Text style={styles.textoBotao}>
-            {loadingRegister ? "Cadastrando..." : "Cadastrar"}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={[styles.pickerContainer, { borderColor: currentTheme.primary }]}>
+            <Picker
+              selectedValue={ramoAtividade}
+              onValueChange={setRamoAtividade}
+              style={{ width: "100%", height: "100%", color: currentTheme.text }}
+              dropdownIconColor={currentTheme.text}
+            >
+              <Picker.Item label="Selecione o ramo de atividade" value="" enabled={false} />
+              {opcoesRamo.map((ramo) => (
+                <Picker.Item key={ramo.id} label={ramo.Nome} value={ramo.id} />
+              ))}
+            </Picker>
+          </View>
+
+          <MaskedTextInput
+            mask="99999-999"
+            keyboardType="number-pad"
+            placeholder="CEP"
+            value={endereco.cep}
+            onChangeText={(v) => handleEnderecoChange("cep", v)}
+            onEndEditing={handleBuscarCEP}
+            style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
+            placeholderTextColor={currentTheme.text + "99"}
+          />
+
+          {["logradouro", "bairro", "cidade", "estado", "numero", "complemento"].map((field) => (
+            <TextInput
+              key={field}
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={endereco[field]}
+              onChangeText={(v) => handleEnderecoChange(field, v)}
+              keyboardType={field === "numero" ? "number-pad" : "default"}
+              style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
+              placeholderTextColor={currentTheme.text + "99"}
+            />
+          ))}
+
+          <TextInput
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={[styles.input, { color: currentTheme.text, borderColor: currentTheme.primary }]}
+            placeholderTextColor={currentTheme.text + "99"}
+          />
+
+          <View style={[styles.passwordContainer, { borderColor: currentTheme.primary }]}>
+            <TextInput
+              placeholder="Senha"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              style={[styles.inputPassword, { color: currentTheme.text }]}
+              placeholderTextColor={currentTheme.text + "99"}
+            />
+            <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
+              {showPassword ? (
+                <Eye size={width * 0.05} color={currentTheme.primary} />
+              ) : (
+                <EyeOff size={width * 0.05} color={currentTheme.primary} />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.botao, { backgroundColor: loadingRegister ? "#7fbdea" : currentTheme.primary }]}
+            onPress={handleRegister}
+            activeOpacity={0.8}
+            disabled={loadingRegister}
+          >
+            <Text style={[styles.textoBotao, { fontSize: Math.min(width * 0.045, 18) }]}>
+              {loadingRegister ? "Cadastrando..." : "Cadastrar"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -277,36 +267,37 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: height * 0.08,
+    paddingVertical: height * 0.06,
+    paddingHorizontal: width * 0.05,
   },
   input: {
-    height: 50,
+    height: height * 0.065,
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 15,
+    paddingHorizontal: width * 0.04,
+    marginBottom: height * 0.02,
     width: width * 0.9,
+    fontSize: Math.min(width * 0.042, 16),
   },
   botao: {
-    paddingVertical: 14,
+    paddingVertical: height * 0.02,
     borderRadius: 8,
     alignItems: "center",
     width: width * 0.9,
-    marginTop: 10,
+    marginTop: height * 0.015,
   },
   textoBotao: {
     color: "#fff",
     fontWeight: "bold",
-    fontSize: 16,
   },
   imageContainer: {
-    width: width * 0.5,
-    height: width * 0.5,
-    borderRadius: (width * 0.5) / 2,
+    width: width * 0.45,
+    height: width * 0.45,
+    borderRadius: (width * 0.45) / 2,
     backgroundColor: "#cbcbcbff",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: height * 0.03,
     overflow: "hidden",
   },
   logo: {
@@ -316,28 +307,28 @@ const styles = StyleSheet.create({
   },
   imagePlaceholder: {
     textAlign: "center",
+    fontSize: Math.min(width * 0.04, 16),
   },
   pickerContainer: {
     width: width * 0.9,
-    height: 60,
+    height: height * 0.065,
     borderWidth: 1,
     borderRadius: 8,
     justifyContent: "center",
-    marginBottom: 15,
+    marginBottom: height * 0.02,
   },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 50,
+    paddingHorizontal: width * 0.04,
+    height: height * 0.065,
     width: width * 0.9,
-    marginBottom: 15,
+    marginBottom: height * 0.02,
   },
   inputPassword: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Math.min(width * 0.042, 16),
   },
-
 });

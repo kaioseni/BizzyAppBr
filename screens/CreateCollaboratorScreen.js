@@ -184,7 +184,7 @@ export default function CreateCollaboratorScreen({ navigation }) {
       <TouchableOpacity
         style={{
           position: "absolute",
-          bottom: height * 0.08,
+          bottom: height * 0.02,
           left: width * 0.05,
           right: width * 0.05,
           backgroundColor: APP_BLUE,

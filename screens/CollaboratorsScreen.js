@@ -110,7 +110,7 @@ export default function CollaboratorsScreen({ navigation }) {
       />
 
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: APP_BLUE, bottom: height * 0.08, width: width * 0.14, height: width * 0.14, borderRadius: width * 0.07 }]}
+        style={[styles.fab, { backgroundColor: APP_BLUE, bottom: height * 0.07, width: width * 0.14, height: width * 0.14, borderRadius: width * 0.07 }]}
         onPress={() => navigation.navigate("CreateCollaboratorScreen")}
       >
         <Plus size={width * 0.07} color="#fff" />

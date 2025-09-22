@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Alert, Dimensions, ScrollView, KeyboardAvoidingView, SafeAreaView } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { MaskedTextInput } from "react-native-mask-text";
 import { Picker } from "@react-native-picker/picker";
@@ -11,6 +11,8 @@ import { db } from "../firebase/firebaseConfig";
 import { doc, updateDoc, deleteDoc, collection, getDocs, getDoc, onSnapshot } from "firebase/firestore";
 import dayjs from "dayjs";
 
+const { width, height } = Dimensions.get("window");
+
 export default function AtendimentoScreen() {
   const { user } = useContext(AuthContext);
   const { effectiveTheme } = useContext(ThemeContext);
@@ -18,13 +20,16 @@ export default function AtendimentoScreen() {
   const route = useRoute();
   const { agendamento } = route.params;
 
-  const colors = effectiveTheme === "dark"
-    ? { background: "#121212", text: "#fff", border: "#555", primary: "#329de4", success: "green", danger: "red" }
-    : { background: "#fff", text: "#000", border: "#ccc", primary: "#329de4", success: "green", danger: "red" };
+  const colors =
+    effectiveTheme === "dark"
+      ? { background: "#121212", text: "#fff", border: "#555", primary: "#329de4", success: "green", danger: "red" }
+      : { background: "#fff", text: "#000", border: "#ccc", primary: "#329de4", success: "green", danger: "red" };
 
   const [nomeCliente, setNomeCliente] = useState(agendamento.nomeCliente || "");
   const [telefone, setTelefone] = useState(agendamento.telefone || "");
-  const [dataHora, setDataHora] = useState(agendamento.dataHora?.toDate ? agendamento.dataHora.toDate() : new Date());
+  const [dataHora, setDataHora] = useState(
+    agendamento.dataHora?.toDate ? agendamento.dataHora.toDate() : new Date()
+  );
   const [servicos, setServicos] = useState([]);
   const [servicoSelecionado, setServicoSelecionado] = useState(agendamento.servico || "");
   const [colaboradores, setColaboradores] = useState([]);
@@ -190,115 +195,153 @@ export default function AtendimentoScreen() {
     setDataHora(newDate);
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.label, { color: colors.text }]}>Nome do Cliente</Text>
-      <TextInput
-        placeholder="Nome do cliente"
-        placeholderTextColor={colors.border}
-        value={nomeCliente}
-        onChangeText={setNomeCliente}
-        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-      />
-
-      <Text style={[styles.label, { color: colors.text }]}>Telefone</Text>
-      <MaskedTextInput
-        mask="55 (99) 9 9999-9999"
-        keyboardType="phone-pad"
-        placeholder="Telefone do cliente"
-        placeholderTextColor={colors.border}
-        value={telefone}
-        onChangeText={setTelefone}
-        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-      />
-
-      <Text style={[styles.label, { color: colors.text }]}>Serviço</Text>
-      <View style={[styles.pickerWrapper, { borderColor: colors.border }]}>
-        <Picker
-          selectedValue={servicoSelecionado}
-          onValueChange={setServicoSelecionado}
-          style={{ color: colors.text }}
-          dropdownIconColor={colors.text}
-        >
-          <Picker.Item label="Selecione um serviço" value="" enabled={false} />
-          {servicos.map(s => (
-            <Picker.Item
-              key={`${s.id}-${s.tipo}`}
-              label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`}
-              value={s.id}
-            />
-          ))}
-        </Picker>
-      </View>
-
-      <Text style={[styles.label, { color: colors.text }]}>Colaborador</Text>
-      <View style={[styles.pickerWrapper, { borderColor: colors.border }]}>
-        <Picker
-          selectedValue={colaboradorSelecionado}
-          onValueChange={setColaboradorSelecionado}
-          style={{ color: colors.text }}
-          dropdownIconColor={colors.text}
-        >
-          <Picker.Item label="Selecione um colaborador (opcional)" value="" />
-          {colaboradores.map(c => (
-            <Picker.Item key={c.id} label={c.nome} value={c.nome} />
-          ))}
-        </Picker>
-      </View>
-
-      <Text style={[styles.label, { color: colors.text }]}>Data e Hora</Text>
-      <TouchableOpacity
-        onPress={() => setShowDatePicker(true)}
-        style={[styles.input, { borderColor: colors.border }]}
+   return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? height * 0.08 : 0}
       >
-        <Text style={{ color: colors.text }}>{dayjs(dataHora).format("DD/MM/YYYY HH:mm")}</Text>
-      </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={{
+            padding: width * 0.05,
+            paddingBottom: height * 0.15,
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={[styles.label, { color: colors.text }]}>Nome do Cliente</Text>
+          <TextInput
+            placeholder="Nome do cliente"
+            placeholderTextColor={colors.border}
+            value={nomeCliente}
+            onChangeText={setNomeCliente}
+            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+          />
 
-      {showDatePicker && <DateTimePicker value={dataHora} mode="date" display="default" onChange={handleDateChange} />}
-      {showTimePicker && <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={handleTimeChange} />}
+          <Text style={[styles.label, { color: colors.text }]}>Telefone</Text>
+          <MaskedTextInput
+            mask="55 (99) 9 9999-9999"
+            keyboardType="phone-pad"
+            placeholder="Telefone do cliente"
+            placeholderTextColor={colors.border}
+            value={telefone}
+            onChangeText={setTelefone}
+            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
+          />
 
-      {agendamento.status !== "finalizado" && (
-        <>
-          <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={salvarAlteracoes}>
-            <Text style={styles.btnText}>Salvar Alterações</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Serviço</Text>
+          <View style={[styles.pickerWrapper, { borderColor: colors.border }]}>
+            <Picker
+              selectedValue={servicoSelecionado}
+              onValueChange={setServicoSelecionado}
+              style={{ color: colors.text }}
+              dropdownIconColor={colors.text}
+            >
+              <Picker.Item label="Selecione um serviço" value="" enabled={false} />
+              {servicos.map((s) => (
+                <Picker.Item
+                  key={`${s.id}-${s.tipo}`}
+                  label={`${s.nome || s.id}${favoritosIds.has(s.id) ? " ⭐" : ""}`}
+                  value={s.id}
+                />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={[styles.label, { color: colors.text }]}>Colaborador</Text>
+          <View style={[styles.pickerWrapper, { borderColor: colors.border }]}>
+            <Picker
+              selectedValue={colaboradorSelecionado}
+              onValueChange={setColaboradorSelecionado}
+              style={{ color: colors.text }}
+              dropdownIconColor={colors.text}
+            >
+              <Picker.Item label="Selecione um colaborador (opcional)" value="" />
+              {colaboradores.map((c) => (
+                <Picker.Item key={c.id} label={c.nome} value={c.nome} />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={[styles.label, { color: colors.text }]}>Data e Hora</Text>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={[styles.input, { borderColor: colors.border }]}
+          >
+            <Text style={{ color: colors.text }}>{dayjs(dataHora).format("DD/MM/YYYY HH:mm")}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.btn, { backgroundColor: colors.success }]} onPress={finalizarAtendimento}>
-            <Text style={styles.btnText}>Finalizar Atendimento</Text>
-          </TouchableOpacity>
-        </>
-      )}
+          {showDatePicker && (
+            <DateTimePicker value={dataHora} mode="date" display="default" onChange={handleDateChange} />
+          )}
+          {showTimePicker && (
+            <DateTimePicker value={dataHora} mode="time" is24Hour display="default" onChange={handleTimeChange} />
+          )}
+ 
+          <View style={styles.buttonsContainer}>
+            {agendamento.status !== "finalizado" && (
+              <>
+                <TouchableOpacity
+                  style={[styles.btn, { backgroundColor: colors.primary }]}
+                  onPress={salvarAlteracoes}
+                >
+                  <Text style={styles.btnText}>Salvar Alterações</Text>
+                </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.btn, { backgroundColor: colors.danger }]} onPress={excluirAgendamento}>
-        <Text style={styles.btnText}>Excluir Agendamento</Text>
-      </TouchableOpacity>
-    </View>
+                <TouchableOpacity
+                  style={[styles.btn, { backgroundColor: colors.success }]}
+                  onPress={finalizarAtendimento}
+                >
+                  <Text style={styles.btnText}>Finalizar Atendimento</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: colors.danger }]}
+              onPress={excluirAgendamento}
+            >
+              <Text style={styles.btnText}>Excluir Agendamento</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  label: { 
-    fontSize: 14, 
-    fontWeight: "600", 
-    marginBottom: 4 
+  container: { flex: 1 },
+  label: {
+    fontSize: Math.min(width * 0.045, 16),
+    fontWeight: "600",
+    marginBottom: 6,
+    marginTop: 12,
   },
-  input: { 
-    borderWidth: 1, 
-    padding: 12, 
-    borderRadius: 8, 
-    marginBottom: 15 
+  input: {
+    borderWidth: 1,
+    borderRadius: width * 0.02,
+    padding: width * 0.035,
+    fontSize: Math.min(width * 0.042, 16),
+    marginBottom: 12,
   },
-  pickerWrapper: { 
-    borderWidth: 1, 
-    borderRadius: 8, 
-    marginBottom: 15 
+  pickerWrapper: {
+    borderWidth: 1,
+    borderRadius: width * 0.02,
+    marginBottom: 12,
   },
-  btn: { 
-    padding: 15,
-    borderRadius: 8, 
-    alignItems: "center", 
-    marginTop: 10 
+  buttonsContainer: {
+    marginTop: 20,
+    gap: 12, 
   },
-  btnText: { color: "white", fontWeight: "bold", fontSize: 16 },
+  btn: {
+    paddingVertical: height * 0.018,
+    borderRadius: width * 0.02,
+    alignItems: "center",
+  },
+  btnText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: Math.min(width * 0.045, 16),
+  },
 });
